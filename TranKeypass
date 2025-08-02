@@ -146,6 +146,14 @@
             justify-content: space-between;
             align-items: center;
         }
+
+        .date-group {
+            background: #e9ecef;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: 600;
+        }
         
         .entry-details {
             flex: 1;
@@ -286,14 +294,6 @@
             font-family: monospace;
         }
         
-        .date-group {
-            background: #e9ecef;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            font-weight: 600;
-        }
-        
         .user-management {
             background: #fff3cd;
             padding: 20px;
@@ -362,8 +362,7 @@
                         <button class="add-btn" onclick="addUser()" style="flex: 0 0 auto; padding: 12px 15px;">เพิ่ม</button>
                     </div>
                     <div class="user-list" id="userList">
-                        <!-- รายชื่อผู้ใช้จะแสดงที่นี่ -->
-                    </div>
+                        </div>
                 </div>
                 
                 <h2 class="section-title">เพิ่มข้อมูลการส่ง</h2>
@@ -385,16 +384,14 @@
                     <label for="sender">ชื่อผู้ส่ง:</label>
                     <select id="sender" required>
                         <option value="">เลือกผู้ส่ง</option>
-                        <!-- ตัวเลือกผู้ส่งจะถูกเพิ่มโดย JavaScript -->
-                    </select>
+                        </select>
                 </div>
                 
                 <div class="form-group">
                     <label for="receiver">ชื่อผู้รับ:</label>
                     <select id="receiver" required>
                         <option value="">เลือกผู้รับ</option>
-                        <!-- ตัวเลือกผู้รับจะถูกเพิ่มโดย JavaScript -->
-                    </select>
+                        </select>
                 </div>
                 
                 <div class="button-group">
@@ -403,8 +400,7 @@
                 </div>
                 
                 <div class="entries-list" id="entriesList">
-                    <!-- Entries will be added here dynamically -->
-                </div>
+                    </div>
             </div>
             
             <div class="results-section">
@@ -456,70 +452,95 @@
 
     <script>
         let entries = [];
-        let users = ['A', 'B', 'C']; // รายชื่อผู้ใช้เริ่มต้น
-        
-        // ฟังก์ชันเพิ่มผู้ใช้ใหม่
+        let users = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUsersFromLocalStorage();
+            loadEntriesFromLocalStorage();
+            updateUsersList();
+            updateSenderReceiverDropdowns();
+            displayEntries();
+            validateEntries();
+        });
+
+        // --- User Management Functions ---
+        function saveUsersToLocalStorage() {
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+
+        function loadUsersFromLocalStorage() {
+            const savedUsers = localStorage.getItem('users');
+            if (savedUsers) {
+                users = JSON.parse(savedUsers);
+            } else {
+                users = ['A', 'B', 'C']; // Default users
+            }
+        }
+
         function addUser() {
             const newUser = document.getElementById('newUser').value.trim();
-            
             if (!newUser) {
                 alert('กรุณากรอกชื่อผู้ใช้');
                 return;
             }
-            
             if (users.includes(newUser)) {
                 alert('ชื่อผู้ใช้นี้มีอยู่แล้ว');
                 return;
             }
-            
             users.push(newUser);
+            saveUsersToLocalStorage();
             updateUsersList();
             updateSenderReceiverDropdowns();
             document.getElementById('newUser').value = '';
         }
-        
-        // ฟังก์ชันลบผู้ใช้
+
         function removeUser(user) {
             if (users.length <= 1) {
                 alert('ต้องมีผู้ใช้อย่างน้อย 1 คน');
                 return;
             }
-            
             users = users.filter(u => u !== user);
+            entries = entries.filter(entry => entry.sender !== user && entry.receiver !== user);
+            
+            saveUsersToLocalStorage();
+            saveEntriesToLocalStorage();
+            
             updateUsersList();
             updateSenderReceiverDropdowns();
+            displayEntries();
+            validateEntries();
         }
-        
-        // ฟังก์ชันอัปเดตรายชื่อผู้ใช้
+
         function updateUsersList() {
             const userList = document.getElementById('userList');
             userList.innerHTML = '';
             
+            if (users.length === 0) {
+                userList.innerHTML = '<p style="text-align: center; color: #6c757d;">ไม่มีผู้ใช้</p>';
+                return;
+            }
+
             users.forEach(user => {
                 const userItem = document.createElement('div');
                 userItem.className = 'user-item';
                 userItem.innerHTML = `
-                    <span>${user}
-                    ลบ</button>
+                    <span>${user}</span>
+                    <button class="remove-user" onclick="removeUser('${user}')">ลบ</button>
                 `;
                 userList.appendChild(userItem);
             });
         }
-        
-        // ฟังก์ชันอัปเดต dropdown ผู้ส่งและผู้รับ
+
         function updateSenderReceiverDropdowns() {
             const senderSelect = document.getElementById('sender');
             const receiverSelect = document.getElementById('receiver');
             
-            // เก็บค่าเดิมไว้
             const oldSender = senderSelect.value;
             const oldReceiver = receiverSelect.value;
             
-            // ล้าง dropdown
             senderSelect.innerHTML = '<option value="">เลือกผู้ส่ง</option>';
             receiverSelect.innerHTML = '<option value="">เลือกผู้รับ</option>';
             
-            // เพิ่มตัวเลือกใหม่
             users.forEach(user => {
                 const senderOption = document.createElement('option');
                 senderOption.value = user;
@@ -532,12 +553,30 @@
                 receiverSelect.appendChild(receiverOption);
             });
             
-            // คืนค่าเดิมหากยังมีอยู่
             if (users.includes(oldSender)) senderSelect.value = oldSender;
             if (users.includes(oldReceiver)) receiverSelect.value = oldReceiver;
         }
-        
-        // ฟังก์ชันเพิ่มข้อมูลการส่ง
+
+        // --- Entries Management Functions ---
+        function saveEntriesToLocalStorage() {
+            localStorage.setItem('entries', JSON.stringify(entries.map(entry => ({
+                ...entry,
+                date: entry.date.toISOString()
+            }))));
+        }
+
+        function loadEntriesFromLocalStorage() {
+            const savedEntries = localStorage.getItem('entries');
+            if (savedEntries) {
+                entries = JSON.parse(savedEntries).map(entry => ({
+                    ...entry,
+                    date: new Date(entry.date)
+                }));
+            } else {
+                entries = [];
+            }
+        }
+
         function addEntry() {
             const date = document.getElementById('date').value;
             const type = document.getElementById('type').value;
@@ -565,25 +604,174 @@
             entries.push(entry);
             entries.sort((a, b) => a.date - b.date);
             
+            saveEntriesToLocalStorage();
             displayEntries();
             validateEntries();
             clearForm();
         }
-        
-        // ฟังก์ชันแสดงรายการข้อมูล
+
         function displayEntries() {
             const entriesList = document.getElementById('entriesList');
             entriesList.innerHTML = '';
             
             if (entries.length === 0) {
-                entriesList.innerHTML = '<p>ยังไม่มีข้อมูลการส่ง</p>';
+                entriesList.innerHTML = '<p style="text-align: center; color: #6c757d;">ยังไม่มีข้อมูลการส่ง</p>';
                 return;
             }
-            
-            entries.forEach(entry => {
-                const dateString = entry.date.toLocaleDateString('th-TH');
-                const entryElement = document.createElement('div');
-                entryElement.className = 'entry-item';
-                entryElement.innerHTML = `
-                    <div class="entry-details">
-                        <div class="entry-date">${dateString}
+
+            const groupedEntries = entries.reduce((acc, entry) => {
+                const dateString = entry.date.toISOString().split('T')[0];
+                if (!acc[dateString]) {
+                    acc[dateString] = [];
+                }
+                acc[dateString].push(entry);
+                return acc;
+            }, {});
+
+            for (const date in groupedEntries) {
+                const dateGroup = document.createElement('div');
+                dateGroup.className = 'date-group';
+                dateGroup.textContent = new Date(date).toLocaleDateString('th-TH');
+                entriesList.appendChild(dateGroup);
+
+                groupedEntries[date].forEach(entry => {
+                    const entryElement = document.createElement('div');
+                    entryElement.className = 'entry-item';
+                    entryElement.innerHTML = `
+                        <div class="entry-details">
+                            <div class="entry-info">${entry.sender} ส่ง ${entry.type} ให้ ${entry.receiver}</div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteEntry(${entry.id})">ลบ</button>
+                    `;
+                    entriesList.appendChild(entryElement);
+                });
+            }
+        }
+
+        function deleteEntry(id) {
+            entries = entries.filter(entry => entry.id !== id);
+            saveEntriesToLocalStorage();
+            displayEntries();
+            validateEntries();
+        }
+
+        function clearEntries() {
+            if (confirm('คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลการส่งทั้งหมด?')) {
+                entries = [];
+                saveEntriesToLocalStorage();
+                displayEntries();
+                validateEntries();
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('date').value = '';
+            document.getElementById('type').value = '';
+            document.getElementById('sender').value = '';
+            document.getElementById('receiver').value = '';
+        }
+
+        // --- Validation Logic ---
+        function validateEntries() {
+            const validationResults = document.getElementById('validationResults');
+            validationResults.innerHTML = '';
+
+            if (entries.length === 0) {
+                validationResults.innerHTML = '<p>กรุณาเพิ่มข้อมูลการส่งเพื่อดูผลการตรวจสอบ</p>';
+                updateStatus('-', '-');
+                return;
+            }
+
+            const groupedByDate = entries.reduce((acc, entry) => {
+                const dateKey = entry.date.toISOString().split('T')[0];
+                if (!acc[dateKey]) {
+                    acc[dateKey] = [];
+                }
+                acc[dateKey].push(entry);
+                return acc;
+            }, {});
+
+            const sortedDates = Object.keys(groupedByDate).sort();
+
+            let keyHolders = new Set();
+            let passHolders = new Set();
+            let firstKeyEntry = true;
+            let firstPassEntry = true;
+
+            const results = [];
+
+            sortedDates.forEach(dateKey => {
+                const dailyEntries = groupedByDate[dateKey];
+                
+                // Process each entry for the current date
+                dailyEntries.forEach(entry => {
+                    let isValid = false;
+                    let reason = '';
+
+                    const isKey = entry.type === 'K';
+                    const isPass = entry.type === 'P';
+
+                    if (isKey && firstKeyEntry) {
+                        isValid = true;
+                        firstKeyEntry = false;
+                        reason = 'รายการแรกของ Key ถือว่าถูกต้องเสมอ';
+                    } else if (isPass && firstPassEntry) {
+                        isValid = true;
+                        firstPassEntry = false;
+                        reason = 'รายการแรกของ Password ถือว่าถูกต้องเสมอ';
+                    } else {
+                        const holders = isKey ? keyHolders : passHolders;
+                        if (holders.has(entry.sender)) {
+                            isValid = true;
+                            reason = `ผู้ส่ง (${entry.sender}) มี ${entry.type} อยู่ในมือ`;
+                        } else {
+                            isValid = false;
+                            reason = `ผู้ส่ง (${entry.sender}) ไม่มี ${entry.type} ในครอบครอง`;
+                        }
+                    }
+
+                    results.push({ ...entry, isValid, reason });
+                });
+
+                // Update holders after processing all entries for the day
+                dailyEntries.forEach(entry => {
+                    const { sender, receiver, type } = entry;
+                    if (type === 'K' && results.find(r => r.id === entry.id).isValid) {
+                        keyHolders.delete(sender);
+                        keyHolders.add(receiver);
+                    } else if (type === 'P' && results.find(r => r.id === entry.id).isValid) {
+                        passHolders.delete(sender);
+                        passHolders.add(receiver);
+                    }
+                });
+            });
+
+            // Display results
+            results.forEach(result => {
+                const resultElement = document.createElement('div');
+                resultElement.className = `result-item ${result.isValid ? 'valid' : 'invalid'}`;
+                const dateString = result.date.toLocaleDateString('th-TH');
+                resultElement.innerHTML = `
+                    <span class="result-icon">${result.isValid ? '✅' : '❌'}</span>
+                    <div class="result-content">
+                        <div class="result-status"><strong>${dateString}</strong>: ${result.sender} ส่ง ${result.type} ให้ ${result.receiver}</div>
+                        <div class="result-reason">${result.reason}</div>
+                    </div>
+                `;
+                validationResults.appendChild(resultElement);
+            });
+
+            // Update current status
+            const finalKeyHolder = keyHolders.size > 0 ? Array.from(keyHolders).join(', ') : '-';
+            const finalPassHolder = passHolders.size > 0 ? Array.from(passHolders).join(', ') : '-';
+            updateStatus(finalKeyHolder, finalPassHolder);
+        }
+
+        function updateStatus(keyStatus, passStatus) {
+            document.getElementById('keyStatus').textContent = keyStatus;
+            document.getElementById('passStatus').textContent = passStatus;
+        }
+
+    </script>
+</body>
+</html>
