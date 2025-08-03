@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบตรวจสอบการส่ง K และ P</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            padding: 30px 0;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .form-section, .results-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .section-title {
+            color: #333;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #667eea;
+            font-size: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+        
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .add-btn {
+            background: #4CAF50;
+            color: white;
+            flex: 1;
+        }
+        
+        .add-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        .clear-btn {
+            background: #f44336;
+            color: white;
+        }
+        
+        .clear-btn:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+        
+        .export-btn {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .export-btn:hover {
+            background: #0b7dda;
+            transform: translateY(-2px);
+        }
+        
+        .toggle-btn {
+            background: #6c757d;
+            color: white;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+        
+        .toggle-btn:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        .entries-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        
+        .entry-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .date-group {
+            background: #e9ecef;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        
+        .entry-details {
+            flex: 1;
+        }
+        
+        .entry-date {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .entry-info {
+            color: #666;
+            margin: 5px 0;
+        }
+        
+        .delete-btn {
+            background: #ff6b6b;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .delete-btn:hover {
+            background: #ff5252;
+        }
+        
+        .validation-results {
+            margin-top: 20px;
+        }
+        
+        .result-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .valid {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        
+        .invalid {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .result-icon {
+            font-size: 1.5rem;
+            margin-right: 15px;
+        }
+        
+        .result-content {
+            flex: 1;
+        }
+        
+        .result-status {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .valid .result-status {
+            color: #155724;
+        }
+        
+        .invalid .result-status {
+            color: #721c24;
+        }
+        
+        .result-reason {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .status-section {
+            background: #e9f7ef;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #28a745;
+        }
+        
+        .status-title {
+            color: #155724;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .status-label {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .status-value {
+            color: #007bff;
+            font-weight: 600;
+        }
+        
+        .instructions, .explanation {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .instructions h3, .explanation h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .instructions ul, .explanation ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li, .explanation li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        
+        .example {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        
+        .user-management {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #ffc107;
+        }
+        
+        .user-management h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+        
+        .user-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .user-input-group input {
+            flex: 1;
+        }
+        
+        .user-list {
+            max-height: 150px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 3px;
+            margin-bottom: 5px;
+        }
+        
+        .remove-user {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 2px 8px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .export-section {
+            background: #d1ecf1;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #0c5460;
+        }
+        
+        .export-section h3 {
+            color: #0c5460;
+            margin-bottom: 15px;
+        }
+        
+        .export-controls {
+            display: flex;
+            gap: 10px;
+            align-items: end;
+        }
+        
+        .export-controls select {
+            flex: 1;
+        }
+        
+        .explanation-content {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .explanation-content h3 {
+            color: #155724;
+            margin-bottom: 15px;
+        }
+        
+        .explanation-content-inner {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .toggle-container {
+            text-align: center;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ระบบตรวจสอบการส่ง K และ P</h1>
+            <p class="subtitle">ตรวจสอบความถูกต้องของการส่ง Key และ Password ระหว่างผู้ส่ง-ผู้รับ</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="form-section">
+                <h2 class="section-title">จัดการผู้ใช้</h2>
+                <div class="user-management">
+                    <h3>เพิ่มผู้ใช้ใหม่</h3>
+                    <div class="user-input-group">
+                        <input type="text" id="newUser" placeholder="ชื่อผู้ใช้ใหม่">
+                        <button class="add-btn" onclick="addUser()" style="flex: 0 0 auto; padding: 12px 15px;">เพิ่ม</button>
+                    </div>
+                    <div class="user-list" id="userList">
+                        </div>
+                </div>
+                
+                <h2 class="section-title">เพิ่มข้อมูลการส่ง</h2>
+                <div class="form-group">
+                    <label for="date">วันที่:</label>
+                    <input type="date" id="date" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="type">ประเภทการส่ง:</label>
+                    <select id="type" required>
+                        <option value="">เลือกประเภท</option>
+                        <option value="K">K (Key)</option>
+                        <option value="P">P (Password)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="sender">ชื่อผู้ส่ง:</label>
+                    <select id="sender" required>
+                        <option value="">เลือกผู้ส่ง</option>
+                        </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="receiver">ชื่อผู้รับ:</label>
+                    <select id="receiver" required>
+                        <option value="">เลือกผู้รับ</option>
+                        </select>
+                </div>
+                
+                <div class="button-group">
+                    <button class="add-btn" onclick="addEntry()">เพิ่มข้อมูล</button>
+                    <button class="clear-btn" onclick="clearEntries()">ล้างข้อมูลทั้งหมด</button>
+                </div>
+                
+                <div class="export-section">
+                    <h3>ส่งออกข้อมูลเป็น CSV</h3>
+                    <div class="export-controls">
+                        <div class="form-group">
+                            <label for="exportMonth">เลือกเดือน:</label>
+                            <select id="exportMonth">
+                                <option value="">ทุกเดือน</option>
+                                <option value="01">มกราคม</option>
+                                <option value="02">กุมภาพันธ์</option>
+                                <option value="03">มีนาคม</option>
+                                <option value="04">เมษายน</option>
+                                <option value="05">พฤษภาคม</option>
+                                <option value="06">มิถุนายน</option>
+                                <option value="07">กรกฎาคม</option>
+                                <option value="08">สิงหาคม</option>
+                                <option value="09">กันยายน</option>
+                                <option value="10">ตุลาคม</option>
+                                <option value="11">พฤศจิกายน</option>
+                                <option value="12">ธันวาคม</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="exportYear">ปี:</label>
+                            <select id="exportYear">
+                                <!-- Years will be populated by JavaScript -->
+                            </select>
+                        </div>
+                        <button class="export-btn" onclick="exportToCSV()">ส่งออก CSV</button>
+                    </div>
+                </div>
+                
+                <div class="entries-list" id="entriesList">
+                    </div>
+            </div>
+            
+            <div class="results-section">
+                <h2 class="section-title">ผลการตรวจสอบ</h2>
+                <div class="status-section">
+                    <h3 class="status-title">สถานะปัจจุบัน</h3>
+                    <div class="status-item">
+                        <span class="status-label">Key (K) อยู่กับ:</span>
+                        <span class="status-value" id="keyStatus">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Password (P) อยู่กับ:</span>
+                        <span class="status-value" id="passStatus">-</span>
+                    </div>
+                </div>
+                <div class="validation-results" id="validationResults">
+                    <p>กรุณาเพิ่มข้อมูลการส่งเพื่อดูผลการตรวจสอบ</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="explanation">
+            <h3>คำอธิบายกรณีที่ข้อมูล "ถูกต้อง" แม้จะดูเหมือน "ผิด"</h3>
+            <div class="toggle-container">
+                <button class="toggle-btn" onclick="toggleExplanation()">ซ่อนคำอธิบาย</button>
+            </div>
+            <div class="explanation-content" id="explanationContent">
+                <div class="explanation-content-inner">
+                    <p><strong>กรณีที่ระบบแจ้งว่า "ผิด" แต่จากการตรวจสอบแล้วข้อมูล "ถูกต้อง":</strong></p>
+                    <br>
+                    <p><strong>ข้อมูลตัวอย่าง:</strong></p>
+                    <div class="example">
+                        วันที่ 2/6/2568 - P ส่ง Key ให้ PO<br>
+                        วันที่ 4/6/2568 - PO ส่ง Key ให้ P<br>
+                        วันที่ 9/6/2568 - PO ส่ง Key ให้ P<br>
+                        วันที่ 9/6/2568 - P ส่ง Key ให้ PO<br>
+                        วันที่ 28/6/2568 - PO ส่ง Key ให้ P<br>
+                        วันที่ 28/6/2568 - P ส่ง Key ให้ PO
+                    </div>
+                    <br>
+                    <p><strong>เหตุผลที่ข้อมูลนี้ "ถูกต้อง":</strong></p>
+                    <ul>
+                        <li>เงื่อนไขที่ตกลงกันไว้: ผู้ส่งสามารถส่ง Key ให้ผู้รับได้ไม่จำกัด</li>
+                        <li>ผู้รับสามารถรับ Key ซ้ำจากผู้ส่งเดิมได้ หากวันนั้นมีการแลกเปลี่ยนกลับกัน (send-back)</li>
+                        <li>ในแต่ละคู่ของวันที่ 9/6 และ 28/6: ทั้ง P และ PO ต่างก็ส่งให้กันในวันเดียวกัน</li>
+                        <li>แสดงว่าเป็นการแลก Key ระหว่างกันแบบ "ส่งกลับ" จึงไม่ผิดเงื่อนไข</li>
+                    </ul>
+                    <br>
+                    <p><strong>ตัวอย่าง:</strong></p>
+                    <ul>
+                        <li>วันที่ 9/6: PO → P และ P → PO (รับส่งกันในวันเดียว)</li>
+                        <li>วันที่ 28/6: PO → P และ P → PO (เหมือนกัน)</li>
+                    </ul>
+                    <br>
+                    <p><strong>สรุป:</strong> ข้อมูลนี้ผ่านการตรวจสอบแล้วว่า "ไม่ผิด" ตามกฎที่ระบบวางไว้ ระบบสามารถรองรับการส่ง/รับแบบนี้ในวันเดียวกันได้</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>คำอธิบายระบบ</h3>
+            <div class="toggle-container">
+                <button class="toggle-btn" onclick="toggleInstructions()">ซ่อนคำอธิบาย</button>
+            </div>
+            <div id="instructionsContent">
+                <ul>
+                    <li>ระบบจะตรวจสอบความถูกต้องของการส่ง K และ P ตามลำดับวันที่</li>
+                    <li>ผู้รับจะสามารถส่งต่อ "K" หรือ "P" ให้คนอื่นได้ ก็ต่อเมื่อเขาได้รับสิ่งนั้นมาแล้วก่อนหน้า</li>
+                    <li>หากมีการส่งโดยที่ผู้ส่งไม่เคยได้รับมาก่อน จะถือว่า "ไม่ถูกต้อง"</li>
+                    <li><strong>ข้อแก้ไข: รายการแรกของแต่ละประเภท (K หรือ P) ถือว่าถูกต้องเสมอ</strong></li>
+                    <li><strong>ข้อแก้ไขใหม่: ข้อมูลในวันที่เดียวกันจะถูกวิเคราะห์ร่วมกันก่อน แล้วจึงวิเคราะห์ข้อมูลในวันถัดไป</strong></li>
+                    <li><strong>ข้อแก้ไขเพิ่มเติม: ระบบรองรับการแลกเปลี่ยน Key แบบส่งกลับในวันเดียวกัน</strong></li>
+                </ul>
+                
+                <h3>ตัวอย่างกรณีที่ถูกต้อง:</h3>
+                <div class="example">
+                    01/07/2025 - A ส่ง K ให้ B (ถูกต้อง - รายการแรก)<br>
+                    01/07/2025 - B ส่ง K ให้ C (ถูกต้อง - B มี K แล้ว)<br>
+                    02/07/2025 - C ส่ง K ให้ A (ถูกต้อง - C มี K แล้ว)<br>
+                    02/07/2025 - A ส่ง K ให้ B (ถูกต้อง - A มี K แล้ว)
+                </div>
+                
+                <h3>ตัวอย่างกรณีที่ไม่ถูกต้อง:</h3>
+                <div class="example">
+                    01/07/2025 - A ส่ง K ให้ B (ถูกต้อง - รายการแรก)<br>
+                    01/07/2025 - A ส่ง K ให้ C (ไม่ถูกต้อง - A ไม่มี K แล้ว)<br>
+                    02/07/2025 - B ส่ง K ให้ A (ถูกต้อง - B มี K อยู่)<br>
+                    02/07/2025 - C ส่ง K ให้ B (ไม่ถูกต้อง - C ไม่มี K แล้ว)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let entries = [];
+        let users = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            populateYearDropdown();
+            loadUsersFromLocalStorage();
+            loadEntriesFromLocalStorage();
+            updateUsersList();
+            updateSenderReceiverDropdowns();
+            displayEntries();
+            validateEntries();
+        });
+
+        // Populate year dropdown with more options
+        function populateYearDropdown() {
+            const yearSelect = document.getElementById('exportYear');
+            const currentYear = new Date().getFullYear();
+            
+            // Add years from 2020 to current year + 5
+            for (let year = 2020; year <= currentYear + 5; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                if (year === 2025) {
+                    option.selected = true;
+                }
+                yearSelect.appendChild(option);
+            }
+        }
+
+        // Toggle functions
+        function toggleExplanation() {
+            const content = document.getElementById('explanationContent');
+            const button = event.target;
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                button.textContent = 'ซ่อนคำอธิบาย';
+            } else {
+                content.classList.add('hidden');
+                button.textContent = 'แสดงคำอธิบาย';
+            }
+        }
+
+        function toggleInstructions() {
+            const content = document.getElementById('instructionsContent');
+            const button = event.target;
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                button.textContent = 'ซ่อนคำอธิบาย';
+            } else {
+                content.classList.add('hidden');
+                button.textContent = 'แสดงคำอธิบาย';
+            }
+        }
+
+        // --- User Management Functions ---
+        function saveUsersToLocalStorage() {
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+
+        function loadUsersFromLocalStorage() {
+            const savedUsers = localStorage.getItem('users');
+            if (savedUsers) {
+                users = JSON.parse(savedUsers);
+            } else {
+                users = ['P', 'PO']; // Default users
+            }
+        }
+
+        function addUser() {
+            const newUser = document.getElementById('newUser').value.trim();
+            if (!newUser) {
+                alert('กรุณากรอกชื่อผู้ใช้');
+                return;
+            }
+            if (users.includes(newUser)) {
+                alert('ชื่อผู้ใช้นี้มีอยู่แล้ว');
+                return;
+            }
+            users.push(newUser);
+            saveUsersToLocalStorage();
+            updateUsersList();
+            updateSenderReceiverDropdowns();
+            document.getElementById('newUser').value = '';
+        }
+
+        function removeUser(user) {
+            if (users.length <= 1) {
+                alert('ต้องมีผู้ใช้อย่างน้อย 1 คน');
+                return;
+            }
+            users = users.filter(u => u !== user);
+            entries = entries.filter(entry => entry.sender !== user && entry.receiver !== user);
+            
+            saveUsersToLocalStorage();
+            saveEntriesToLocalStorage();
+            
+            updateUsersList();
+            updateSenderReceiverDropdowns();
+            displayEntries();
+            validateEntries();
+        }
+
+        function updateUsersList() {
+            const userList = document.getElementById('userList');
+            userList.innerHTML = '';
+            
+            if (users.length === 0) {
+                userList.innerHTML = '<p style="text-align: center; color: #6c757d;">ไม่มีผู้ใช้</p>';
+                return;
+            }
+
+            users.forEach(user => {
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                userItem.innerHTML = `
+                    <span>${user}</span>
+                    <button class="remove-user" onclick="removeUser('${user}')">ลบ</button>
+                `;
+                userList.appendChild(userItem);
+            });
+        }
+
+        function updateSenderReceiverDropdowns() {
+            const senderSelect = document.getElementById('sender');
+            const receiverSelect = document.getElementById('receiver');
+            
+            const oldSender = senderSelect.value;
+            const oldReceiver = receiverSelect.value;
+            
+            senderSelect.innerHTML = '<option value="">เลือกผู้ส่ง</option>';
+            receiverSelect.innerHTML = '<option value="">เลือกผู้รับ</option>';
+            
+            users.forEach(user => {
+                const senderOption = document.createElement('option');
+                senderOption.value = user;
+                senderOption.textContent = user;
+                senderSelect.appendChild(senderOption);
+                
+                const receiverOption = document.createElement('option');
+                receiverOption.value = user;
+                receiverOption.textContent = user;
+                receiverSelect.appendChild(receiverOption);
+            });
+            
+            if (users.includes(oldSender)) senderSelect.value = oldSender;
+            if (users.includes(oldReceiver)) receiverSelect.value = oldReceiver;
+        }
+
+        // --- Entries Management Functions ---
+        function saveEntriesToLocalStorage() {
+            localStorage.setItem('entries', JSON.stringify(entries.map(entry => ({
+                ...entry,
+                date: entry.date.toISOString()
+            }))));
+        }
+
+        function loadEntriesFromLocalStorage() {
+            const savedEntries = localStorage.getItem('entries');
+            if (savedEntries) {
+                entries = JSON.parse(savedEntries).map(entry => ({
+                    ...entry,
+                    date: new Date(entry.date)
+                }));
+            } else {
+                // Preload with the example data
+                entries = [
+                    {id: 1, date: new Date('2025-06-02'), type: 'K', sender: 'P', receiver: 'PO'},
+                    {id: 2, date: new Date('2025-06-04'), type: 'K', sender: 'PO', receiver: 'P'},
+                    {id: 3, date: new Date('2025-06-09'), type: 'K', sender: 'PO', receiver: 'P'},
+                    {id: 4, date: new Date('2025-06-09'), type: 'K', sender: 'P', receiver: 'PO'},
+                    {id: 5, date: new Date('2025-06-28'), type: 'K', sender: 'PO', receiver: 'P'},
+                    {id: 6, date: new Date('2025-06-28'), type: 'K', sender: 'P', receiver: 'PO'}
+                ];
+            }
+        }
+
+        function addEntry() {
+            const date = document.getElementById('date').value;
+            const type = document.getElementById('type').value;
+            const sender = document.getElementById('sender').value;
+            const receiver = document.getElementById('receiver').value;
+            
+            if (!date || !type || !sender || !receiver) {
+                alert('กรุณากรอกข้อมูลให้ครบทุกช่อง');
+                return;
+            }
+            
+            if (sender === receiver) {
+                alert('ชื่อผู้ส่งและผู้รับต้องไม่ซ้ำกัน');
+                return;
+            }
+            
+            const entry = {
+                id: Date.now(),
+                date: new Date(date),
+                type: type,
+                sender: sender,
+                receiver: receiver
+            };
+            
+            entries.push(entry);
+            entries.sort((a, b) => a.date - b.date);
+            
+            saveEntriesToLocalStorage();
+            displayEntries();
+            validateEntries();
+            clearForm();
+        }
+
+        function displayEntries() {
+            const entriesList = document.getElementById('entriesList');
+            entriesList.innerHTML = '';
+            
+            if (entries.length === 0) {
+                entriesList.innerHTML = '<p style="text-align: center; color: #6c757d;">ยังไม่มีข้อมูลการส่ง</p>';
+                return;
+            }
+
+            const groupedEntries = entries.reduce((acc, entry) => {
+                const dateString = entry.date.toISOString().split('T')[0];
+                if (!acc[dateString]) {
+                    acc[dateString] = [];
+                }
+                acc[dateString].push(entry);
+                return acc;
+            }, {});
+
+            for (const date in groupedEntries) {
+                const dateGroup = document.createElement('div');
+                dateGroup.className = 'date-group';
+                dateGroup.textContent = new Date(date).toLocaleDateString('th-TH');
+                entriesList.appendChild(dateGroup);
+
+                groupedEntries[date].forEach(entry => {
+                    const entryElement = document.createElement('div');
+                    entryElement.className = 'entry-item';
+                    entryElement.innerHTML = `
+                        <div class="entry-details">
+                            <div class="entry-info">${entry.sender} ส่ง ${entry.type} ให้ ${entry.receiver}</div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteEntry(${entry.id})">ลบ</button>
+                    `;
+                    entriesList.appendChild(entryElement);
+                });
+            }
+        }
+
+        function deleteEntry(id) {
+            entries = entries.filter(entry => entry.id !== id);
+            saveEntriesToLocalStorage();
+            displayEntries();
+            validateEntries();
+        }
+
+        function clearEntries() {
+            if (confirm('คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลการส่งทั้งหมด?')) {
+                entries = [];
+                saveEntriesToLocalStorage();
+                displayEntries();
+                validateEntries();
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('date').value = '';
+            document.getElementById('type').value = '';
+            document.getElementById('sender').value = '';
+            document.getElementById('receiver').value = '';
+        }
+
+        // --- Export to CSV Function ---
+        function exportToCSV() {
+            const selectedMonth = document.getElementById('exportMonth').value;
+            const selectedYear = document.getElementById('exportYear').value;
+            
+            let filteredEntries = [...entries];
+            
+            if (selectedMonth && selectedYear) {
+                filteredEntries = entries.filter(entry => {
+                    const entryDate = new Date(entry.date);
+                    const entryMonth = String(entryDate.getMonth() + 1).padStart(2, '0');
+                    const entryYear = entryDate.getFullYear().toString();
+                    return entryMonth === selectedMonth && entryYear === selectedYear;
+                });
+            } else if (selectedYear) {
+                filteredEntries = entries.filter(entry => {
+                    const entryYear = new Date(entry.date).getFullYear().toString();
+                    return entryYear === selectedYear;
+                });
+            }
+            
+            if (filteredEntries.length === 0) {
+                alert('ไม่มีข้อมูลสำหรับการส่งออก');
+                return;
+            }
+            
+            // Sort entries by date
+            filteredEntries.sort((a, b) => a.date - b.date);
+            
+            // Create CSV content
+            let csvContent = '\uFEFFวันที่,ประเภท,ผู้ส่ง,ผู้รับ\n'; // BOM for UTF-8
+            
+            filteredEntries.forEach(entry => {
+                const dateStr = entry.date.toLocaleDateString('th-TH');
+                const typeStr = entry.type === 'K' ? 'Key' : 'Password';
+                csvContent += `"${dateStr}","${typeStr}","${entry.sender}","${entry.receiver}"\n`;
+            });
+            
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            
+            let filename = 'รายงาน_K_P_ทั้งหมด';
+            if (selectedMonth && selectedYear) {
+                const monthNames = [
+                    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+                ];
+                const monthName = monthNames[parseInt(selectedMonth) - 1];
+                filename = `รายงาน_K_P_${monthName}_${selectedYear}`;
+            } else if (selectedYear) {
+                filename = `รายงาน_K_P_ปี_${selectedYear}`;
+            }
+            
+            link.setAttribute('download', `${filename}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- Validation Logic ---
+        function validateEntries() {
+            const validationResults = document.getElementById('validationResults');
+            validationResults.innerHTML = '';
+
+            if (entries.length === 0) {
+                validationResults.innerHTML = '<p>กรุณาเพิ่มข้อมูลการส่งเพื่อดูผลการตรวจสอบ</p>';
+                updateStatus('-', '-');
+                return;
+            }
+
+            const groupedByDate = entries.reduce((acc, entry) => {
+                const dateKey = entry.date.toISOString().split('T')[0];
+                if (!acc[dateKey]) {
+                    acc[dateKey] = [];
+                }
+                acc[dateKey].push(entry);
+                return acc;
+            }, {});
+
+            const sortedDates = Object.keys(groupedByDate).sort();
+
+            let keyHolders = new Set();
+            let passHolders = new Set();
+            let firstKeyEntry = true;
+            let firstPassEntry = true;
+
+            const results = [];
+
+            sortedDates.forEach(dateKey => {
+                const dailyEntries = groupedByDate[dateKey];
+                
+                // Create a map to track send-back transactions for the day
+                const sendBackMap = new Map(); // sender-receiver pair -> count
+                
+                // First pass: identify send-back transactions
+                dailyEntries.forEach(entry => {
+                    const pair1 = `${entry.sender}-${entry.receiver}`;
+                    const pair2 = `${entry.receiver}-${entry.sender}`;
+                    
+                    // Check if this is a send-back (both directions exist)
+                    if (dailyEntries.some(e => e.sender === entry.receiver && e.receiver === entry.sender && e.type === entry.type)) {
+                        if (!sendBackMap.has(pair1) && !sendBackMap.has(pair2)) {
+                            sendBackMap.set(pair1, true);
+                            sendBackMap.set(pair2, true);
+                        }
+                    }
+                });
+                
+                // Process each entry for the current date
+                dailyEntries.forEach(entry => {
+                    let isValid = false;
+                    let reason = '';
+
+                    const isKey = entry.type === 'K';
+                    const isPass = entry.type === 'P';
+                    const pair = `${entry.sender}-${entry.receiver}`;
+
+                    if (isKey && firstKeyEntry) {
+                        isValid = true;
+                        firstKeyEntry = false;
+                        reason = 'รายการแรกของ Key ถือว่าถูกต้องเสมอ';
+                    } else if (isPass && firstPassEntry) {
+                        isValid = true;
+                        firstPassEntry = false;
+                        reason = 'รายการแรกของ Password ถือว่าถูกต้องเสมอ';
+                    } else if (sendBackMap.has(pair)) {
+                        // This is a send-back transaction, always valid
+                        isValid = true;
+                        reason = `เป็นการแลกเปลี่ยน ${entry.type} แบบส่งกลับในวันเดียวกัน`;
+                    } else {
+                        const holders = isKey ? keyHolders : passHolders;
+                        if (holders.has(entry.sender)) {
+                            isValid = true;
+                            reason = `ผู้ส่ง (${entry.sender}) มี ${entry.type} อยู่ในมือ`;
+                        } else {
+                            isValid = false;
+                            reason = `ผู้ส่ง (${entry.sender}) ไม่มี ${entry.type} ในครอบครอง`;
+                        }
+                    }
+
+                    results.push({ ...entry, isValid, reason });
+                });
+
+                // Update holders after processing all entries for the day
+                dailyEntries.forEach(entry => {
+                    const { sender, receiver, type } = entry;
+                    const pair = `${sender}-${receiver}`;
+                    const result = results.find(r => r.id === entry.id);
+                    
+                    if (result && result.isValid) {
+                        if (type === 'K') {
+                            // For send-back, we don't remove from sender (both keep it temporarily)
+                            if (!sendBackMap.has(pair)) {
+                                keyHolders.delete(sender);
+                            }
+                            keyHolders.add(receiver);
+                        } else if (type === 'P') {
+                            // For send-back, we don't remove from sender (both keep it temporarily)
+                            if (!sendBackMap.has(pair)) {
+                                passHolders.delete(sender);
+                            }
+                            passHolders.add(receiver);
+                        }
+                    }
+                });
+            });
+
+            // Display results
+            results.forEach(result => {
+                const resultElement = document.createElement('div');
+                resultElement.className = `result-item ${result.isValid ? 'valid' : 'invalid'}`;
+                const dateString = result.date.toLocaleDateString('th-TH');
+                resultElement.innerHTML = `
+                    <span class="result-icon">${result.isValid ? '✅' : '❌'}</span>
+                    <div class="result-content">
+                        <div class="result-status"><strong>${dateString}</strong>: ${result.sender} ส่ง ${result.type} ให้ ${result.receiver}</div>
+                        <div class="result-reason">${result.reason}</div>
+                    </div>
+                `;
+                validationResults.appendChild(resultElement);
+            });
+
+            // Update current status
+            const finalKeyHolder = keyHolders.size > 0 ? Array.from(keyHolders).join(', ') : '-';
+            const finalPassHolder = passHolders.size > 0 ? Array.from(passHolders).join(', ') : '-';
+            updateStatus(finalKeyHolder, finalPassHolder);
+        }
+
+        function updateStatus(keyStatus, passStatus) {
+            document.getElementById('keyStatus').textContent = keyStatus;
+            document.getElementById('passStatus').textContent = passStatus;
+        }
+
+    </script>
+</body>
+</html>
