@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตรวจสอบพิกัด Lat Long ที่ใกล้กัน</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --accent-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --dark-purple: #4a148c;
+            --light-purple: #e1bee7;
+            --success-green: #4caf50;
+            --warning-orange: #ff9800;
+            --danger-red: #f44336;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Sarabun', 'TH Sarabun', Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 10% 20%, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 20%),
+                        radial-gradient(circle at 90% 80%, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 20%);
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 0 30px;
+            color: white;
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: var(--accent-gradient);
+            border-radius: 2px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 1.4rem;
+            opacity: 0.95;
+            font-weight: 300;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            padding: 35px;
+            margin-bottom: 35px;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+        }
+
+        .upload-section {
+            text-align: center;
+            padding: 50px 30px;
+        }
+
+        .upload-area {
+            border: 3px dashed rgba(102, 126, 234, 0.5);
+            border-radius: 15px;
+            padding: 50px 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.3) 50%, transparent 60%);
+            background-size: 200% 200%;
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            transform: scale(1.02);
+        }
+
+        .upload-area.dragover {
+            border-color: #4facfe;
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.15) 0%, rgba(0, 242, 254, 0.15) 100%);
+            transform: scale(1.03);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 5px 10px rgba(102, 126, 234, 0.3));
+        }
+
+        .upload-text {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .upload-subtext {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            margin-bottom: 25px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-success {
+            background: var(--success-green);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-warning {
+            background: var(--warning-orange);
+            box-shadow: 0 8px 25px rgba(255, 152, 0, 0.4);
+        }
+
+        .settings-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .setting-group {
+            flex: 1;
+            min-width: 280px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.2rem;
+        }
+
+        .form-control, .form-select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            outline: none;
+        }
+
+        .info-text {
+            font-size: 0.95rem;
+            color: #666;
+            margin-top: 8px;
+            font-style: italic;
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .results-header h2 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #333;
+            margin: 0;
+        }
+
+        .clusters-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .cluster-card {
+            background: linear-gradient(135deg, rgba(248, 249, 250, 0.9) 0%, rgba(238, 241, 246, 0.9) 100%);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            border-left: 6px solid #667eea;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cluster-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-gradient);
+        }
+
+        .cluster-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+        }
+
+        .cluster-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+        }
+
+        .cluster-title {
+            font-weight: 700;
+            color: #333;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cluster-count {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .cluster-items {
+            max-height: 350px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .cluster-items::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .cluster-items::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+            border-radius: 3px;
+        }
+
+        .cluster-items::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 3px;
+        }
+
+        .cluster-item {
+            padding: 15px;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            transition: all 0.2s ease;
+        }
+
+        .cluster-item:last-child {
+            border-bottom: none;
+        }
+
+        .cluster-item:hover {
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 8px;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #444;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .item-coords {
+            font-size: 1.05rem;
+            color: #666;
+            font-family: monospace;
+            background: rgba(0,0,0,0.03);
+            padding: 5px 10px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .summary-card {
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: 20px;
+            padding: 35px;
+            text-align: center;
+            margin-top: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            transform: rotate(30deg);
+        }
+
+        .summary-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .summary-stats {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 30px;
+            position: relative;
+        }
+
+        .stat-item {
+            text-align: center;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .stat-value {
+            font-size: 2.8rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .stat-label {
+            font-size: 1.3rem;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            padding: 25px;
+            background: linear-gradient(135deg, rgba(255, 235, 238, 0.9) 0%, rgba(255, 205, 210, 0.9) 100%);
+            border-radius: 15px;
+            margin: 25px 0;
+            display: none;
+            font-size: 1.2rem;
+            font-weight: 500;
+            border-left: 5px solid #e74c3c;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            display: none;
+        }
+
+        .spinner {
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 5px solid #ffffff;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.4rem;
+            color: white;
+            font-weight: 500;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+
+        .progress-container {
+            width: 100%;
+            max-width: 500px;
+            margin: 20px auto;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 5px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .progress-bar {
+            height: 20px;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 8px;
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: progressShine 2s infinite;
+        }
+
+        @keyframes progressShine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-text {
+            color: white;
+            font-weight: 600;
+            margin-top: 10px;
+            font-size: 1.1rem;
+        }
+
+        .btn-group-download {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .pairs-section {
+            background: linear-gradient(135deg, rgba(255, 248, 220, 0.9) 0%, rgba(255, 228, 196, 0.9) 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            border-left: 5px solid #ff9800;
+        }
+
+        .pairs-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .pairs-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pairs-count {
+            background: #ff9800;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .pairs-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .pair-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+
+        .pair-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .pair-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .pair-distance {
+            background: #4caf50;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .pair-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .pair-point {
+            background: rgba(0,0,0,0.03);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .point-name {
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 5px;
+        }
+
+        .point-coords {
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .single-points-section {
+            background: linear-gradient(135deg, rgba(245, 245, 245, 0.9) 0%, rgba(230, 230, 230, 0.9) 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            border-left: 5px solid #9e9e9e;
+        }
+
+        .single-points-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .single-points-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .single-points-count {
+            background: #9e9e9e;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .single-points-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .single-point-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+
+        .single-point-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .single-point-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .single-point-details {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .single-point-main {
+            background: rgba(0,0,0,0.03);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .single-point-nearest {
+            background: rgba(255, 152, 0, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 3px solid #ff9800;
+        }
+
+        .point-name, .nearest-point-label {
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 5px;
+        }
+
+        .point-coords, .nearest-point-coords {
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .nearest-point-distance {
+            font-weight: 600;
+            color: #ff9800;
+        }
+
+        @media (max-width: 992px) {
+            .settings-section {
+                flex-direction: column;
+            }
+            
+            .clusters-container {
+                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .results-header {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .summary-stats {
+                flex-direction: column;
+                gap: 25px;
+            }
+            
+            .pair-details, .single-point-details {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+            
+            .card {
+                padding: 25px 20px;
+            }
+            
+            .upload-section {
+                padding: 30px 15px;
+            }
+            
+            .clusters-container {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .subtitle {
+                font-size: 1.2rem;
+            }
+        }
+
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .floating-animation {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-map-marker-alt me-3"></i>ตรวจสอบพิกัด Lat Long ที่ใกล้กัน</h1>
+            <p class="subtitle"><i class="fas fa-route me-2"></i>วิเคราะห์และจัดกลุ่มพิกัดที่มีระยะใกล้กัน (ระยะทางตามถนนจริง)</p>
+        </header>
+        
+        <main>
+            <div class="card upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon floating-animation">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <p class="upload-text">คลิกหรือลากไฟล์ CSV มาที่นี่</p>
+                    <p class="upload-subtext">(ไฟล์ต้องมีคอลัมน์ "A ชื่อ" และ "B ละติจูด,ลองจิจูด")</p>
+                    <button class="btn btn-primary pulse-animation" id="browseBtn">
+                        <i class="fas fa-folder-open me-2"></i>เลือกไฟล์
+                    </button>
+                    <input type="file" id="fileInput" class="file-input" accept=".csv">
+                </div>
+                
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+            
+            <div class="card settings-section">
+                <div class="setting-group">
+                    <label for="distanceThreshold"><i class="fas fa-ruler-combined me-2"></i>ระยะห่างสูงสุด (กิโลเมตร):</label>
+                    <input type="number" id="distanceThreshold" class="form-control" value="5" min="0.1" step="0.1">
+                    <div class="info-text"><i class="fas fa-exclamation-circle me-1"></i>ระยะทางตามถนนจริง (ไม่ใช่ระยะทางแนวตรง)</div>
+                </div>
+                <div class="setting-group">
+                    <label for="algorithm"><i class="fas fa-cogs me-2"></i>อัลกอริธึม:</label>
+                    <select id="algorithm" class="form-select">
+                        <option value="simple">Simple Clustering</option>
+                        <option value="dbscan" selected>DBSCAN (แนะนำ)</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-primary w-100" id="processBtn" disabled>
+                        <i class="fas fa-cogs me-2"></i>ประมวลผลข้อมูล
+                    </button>
+                </div>
+            </div>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p class="loading-text"><i class="fas fa-spinner me-2"></i>กำลังประมวลผลข้อมูล... (อาจใช้เวลาสักครู่)</p>
+                
+                <!-- Progress Bar -->
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="progress-text" id="progressText">กำลังเตรียมข้อมูล...</div>
+            </div>
+            
+            <div class="results-section" id="resultsSection">
+                <div class="results-header">
+                    <h2><i class="fas fa-chart-network me-3"></i>ผลการวิเคราะห์</h2>
+                    <div class="btn-group-download">
+                        <button class="btn btn-success" id="downloadCSVBtn">
+                            <i class="fas fa-file-csv me-2"></i>ดาวน์โหลด CSV
+                        </button>
+                        <button class="btn btn-warning" id="downloadExcelBtn">
+                            <i class="fas fa-file-excel me-2"></i>ดาวน์โหลด Excel
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="pairs-section">
+                    <div class="pairs-header">
+                        <div class="pairs-title">
+                            <i class="fas fa-link me-2"></i>คู่พิกัดที่จับได้ (ตรงเงื่อนไข)
+                        </div>
+                        <div class="pairs-count" id="pairsCount">0 คู่</div>
+                    </div>
+                    <div class="pairs-container" id="pairsContainer"></div>
+                </div>
+                
+                <div class="single-points-section">
+                    <div class="single-points-header">
+                        <div class="single-points-title">
+                            <i class="fas fa-user me-2"></i>จุดที่ไม่มีคู่ (ไม่ตรงเงื่อนไข)
+                        </div>
+                        <div class="single-points-count" id="singlePointsCount">0 จุด</div>
+                    </div>
+                    <div class="single-points-container" id="singlePointsContainer"></div>
+                </div>
+                
+                <div class="clusters-container" id="clustersContainer"></div>
+                
+                <div class="summary-card">
+                    <div class="summary-title">
+                        <i class="fas fa-chart-bar"></i>สรุปผลการวิเคราะห์
+                    </div>
+                    <div class="summary-stats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="totalPoints">0</div>
+                            <div class="stat-label">จำนวนจุดทั้งหมด</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="clusterCount">0</div>
+                            <div class="stat-label">จำนวนกลุ่ม</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="avgDistance">0</div>
+                            <div class="stat-label">ระยะเฉลี่ย (กม.)</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="pairCount">0</div>
+                            <div class="stat-label">จำนวนคู่ที่จับได้</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ตัวแปรเก็บข้อมูล
+        let pointsData = [];
+        let clusteredData = [];
+        let distanceMatrix = []; // เก็บระยะทางระหว่างแต่ละจุด
+        let pairData = []; // เก็บข้อมูลคู่ที่จับได้
+        let singlePointsData = []; // เก็บข้อมูลจุดเดี่ยว
+        
+        // องค์ประกอบ DOM
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const browseBtn = document.getElementById('browseBtn');
+        const processBtn = document.getElementById('processBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const loading = document.getElementById('loading');
+        const resultsSection = document.getElementById('resultsSection');
+        const clustersContainer = document.getElementById('clustersContainer');
+        const pairsContainer = document.getElementById('pairsContainer');
+        const singlePointsContainer = document.getElementById('singlePointsContainer');
+        const distanceThreshold = document.getElementById('distanceThreshold');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        
+        // Event Listeners
+        browseBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+        processBtn.addEventListener('click', processClustering);
+        document.getElementById('downloadCSVBtn').addEventListener('click', downloadCSV);
+        document.getElementById('downloadExcelBtn').addEventListener('click', downloadExcel);
+        
+        // Drag and drop events
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect();
+            }
+        });
+        
+        // ฟังก์ชันจัดการไฟล์
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (!file) return;
+            
+            if (!file.name.endsWith('.csv')) {
+                showError('กรุณาเลือกไฟล์ CSV เท่านั้น');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    parseCSV(e.target.result);
+                    processBtn.disabled = false;
+                    showError('');
+                } catch (error) {
+                    showError('ไม่สามารถอ่านไฟล์ได้: ' + error.message);
+                }
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+        
+        // ฟังก์ชันแปลง CSV เป็นข้อมูล
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n').filter(line => line.trim() !== '');
+            if (lines.length < 2) {
+                throw new Error('ไฟล์ไม่มีข้อมูลเพียงพอ');
+            }
+            
+            pointsData = [];
+            
+            // ตรวจสอบ header row
+            const headerLine = lines[0];
+            const headers = parseCSVRow(headerLine);
+            
+            // ตรวจสอบว่ามีคอลัมน์ที่ต้องการหรือไม่
+            const nameColumnIndex = headers.findIndex(h => h.trim() === 'A ชื่อ');
+            const coordsColumnIndex = headers.findIndex(h => h.trim() === 'B ละติจูด,ลองจิจูด');
+            
+            if (nameColumnIndex === -1 || coordsColumnIndex === -1) {
+                throw new Error('ไฟล์ต้องมีคอลัมน์ "A ชื่อ" และ "B ละติจูด,ลองจิจูด"');
+            }
+            
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line === '') continue;
+                
+                const values = parseCSVRow(line);
+                if (values.length > Math.max(nameColumnIndex, coordsColumnIndex)) {
+                    const name = values[nameColumnIndex];
+                    const coords = values[coordsColumnIndex];
+                    
+                    if (coords) {
+                        const coordParts = coords.split(',');
+                        if (coordParts.length >= 2) {
+                            const lat = parseFloat(coordParts[0]);
+                            const lng = parseFloat(coordParts[1]);
+                            
+                            if (!isNaN(lat) && !isNaN(lng)) {
+                                pointsData.push({
+                                    name: name,
+                                    lat: lat,
+                                    lng: lng
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (pointsData.length === 0) {
+                throw new Error('ไม่พบข้อมูลพิกัดที่ถูกต้องในไฟล์');
+            }
+        }
+        
+        // ฟังก์ชันแยก CSV row ที่รองรับ quoted values
+        function parseCSVRow(row) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < row.length; i++) {
+                const char = row[i];
+                
+                if (char === '"') {
+                    if (inQuotes && i + 1 < row.length && row[i + 1] === '"') {
+                        // Double quotes inside quoted field
+                        current += '"';
+                        i++; // Skip next quote
+                    } else {
+                        // Toggle quotes
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    // End of field
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            // Add last field
+            result.push(current.trim());
+            return result;
+        }
+        
+        // ฟังก์ชันคำนวณระยะทางตามถนนจริง (OSRM API)
+        async function calculateRoadDistance(lat1, lon1, lat2, lon2) {
+            try {
+                // ใช้ OSRM API สำหรับคำนวณระยะทางตามถนนจริง
+                const url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=false`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.routes && data.routes.length > 0) {
+                    // แปลงเมตรเป็นกิโลเมตร
+                    return data.routes[0].distance / 1000;
+                } else {
+                    // ถ้าไม่สามารถคำนวณได้ ใช้ระยะทางแนวตรง
+                    return calculateStraightDistance(lat1, lon1, lat2, lon2);
+                }
+            } catch (error) {
+                // ถ้าเกิดข้อผิดพลาด ใช้ระยะทางแนวตรง
+                console.warn('ไม่สามารถเชื่อมต่อกับ OSRM API ได้ ใช้ระยะทางแนวตรงแทน');
+                return calculateStraightDistance(lat1, lon1, lat2, lon2);
+            }
+        }
+        
+        // ฟังก์ชันคำนวณระยะทางแนวตรง (Haversine formula)
+        function calculateStraightDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // รัศมีของโลกในกิโลเมตร
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+        
+        // ฟังก์ชันสร้าง Distance Matrix
+        async function buildDistanceMatrix(points) {
+            const matrix = [];
+            const n = points.length;
+            
+            // อัปเดต progress bar
+            updateProgress(0, 'กำลังคำนวณระยะทางระหว่างจุด...');
+            
+            // สร้าง promise สำหรับทุกคู่ของจุด
+            const promises = [];
+            let completed = 0;
+            const total = n * (n - 1) / 2; // จำนวนคู่ที่ต้องคำนวณ
+            
+            for (let i = 0; i < n; i++) {
+                matrix[i] = [];
+                for (let j = 0; j < n; j++) {
+                    if (i === j) {
+                        matrix[i][j] = 0;
+                        promises.push(Promise.resolve(0));
+                    } else if (i < j) { // คำนวณเฉพาะครึ่งหนึ่งเพราะระยะทางเป็น symmetric
+                        const promise = calculateRoadDistance(
+                            points[i].lat, points[i].lng,
+                            points[j].lat, points[j].lng
+                        ).then(distance => {
+                            matrix[i][j] = distance;
+                            matrix[j][i] = distance; // กำหนดค่าให้ทั้งสองทิศทาง
+                            completed++;
+                            // อัปเดต progress bar
+                            const progress = Math.round((completed / total) * 100);
+                            updateProgress(progress, `คำนวณระยะทาง... (${completed}/${total})`);
+                            return distance;
+                        });
+                        promises.push(promise);
+                    }
+                }
+            }
+            
+            // รอให้ทุก promise ทำงานเสร็จ
+            await Promise.all(promises);
+            
+            return matrix;
+        }
+        
+        // ฟังก์ชันอัปเดต progress bar
+        function updateProgress(percentage, text) {
+            progressBar.style.width = percentage + '%';
+            progressText.textContent = text;
+        }
+        
+        // ฟังก์ชันจัดกลุ่มแบบง่ายโดยใช้ Distance Matrix (จับคู่ครั้งเดียว)
+        function simpleClusteringWithMatrix(points, matrix, threshold) {
+            updateProgress(80, 'กำลังจัดกลุ่มจุด...');
+            
+            const clusters = [];
+            const visited = new Array(points.length).fill(false);
+            const pairList = []; // เก็บคู่ที่จับได้
+            const singleList = []; // เก็บจุดเดี่ยว
+            
+            // สร้างรายการระยะทางทั้งหมดและเรียงลำดับจากน้อยไปมาก
+            const distances = [];
+            for (let i = 0; i < points.length; i++) {
+                for (let j = i + 1; j < points.length; j++) {
+                    distances.push({
+                        i: i,
+                        j: j,
+                        distance: matrix[i][j]
+                    });
+                }
+            }
+            
+            // เรียงลำดับตามระยะทาง
+            distances.sort((a, b) => a.distance - b.distance);
+            
+            // จับคู่ตามระยะทางที่ใกล้ที่สุดก่อน
+            for (const dist of distances) {
+                if (visited[dist.i] || visited[dist.j]) continue;
+                
+                if (dist.distance <= threshold) {
+                    // จับคู่ได้
+                    const cluster = [points[dist.i], points[dist.j]];
+                    clusters.push(cluster);
+                    visited[dist.i] = true;
+                    visited[dist.j] = true;
+                    
+                    // เพิ่มเข้าไปในรายการคู่
+                    pairList.push({
+                        point1: points[dist.i],
+                        point2: points[dist.j],
+                        distance: dist.distance
+                    });
+                }
+            }
+            
+            // จัดการจุดที่เหลือ (ไม่มีคู่)
+            for (let i = 0; i < points.length; i++) {
+                if (!visited[i]) {
+                    // หาจุดใกล้เคียงสุดนอกเงื่อนไข
+                    let nearestPoint = null;
+                    let nearestDistance = Infinity;
+                    let nearestIndex = -1;
+                    
+                    for (let j = 0; j < points.length; j++) {
+                        if (i === j) continue;
+                        
+                        const distance = matrix[i][j];
+                        
+                        if (distance < nearestDistance) {
+                            nearestDistance = distance;
+                            nearestPoint = points[j];
+                            nearestIndex = j;
+                        }
+                    }
+                    
+                    // เพิ่มเข้าไปในรายการจุดเดี่ยว
+                    singleList.push({
+                        point: points[i],
+                        nearestPoint: nearestPoint,
+                        distance: nearestDistance
+                    });
+                }
+            }
+            
+            pairData = pairList;
+            singlePointsData = singleList;
+            return clusters;
+        }
+        
+        // ฟังก์ชัน DBSCAN โดยใช้ Distance Matrix
+        function dbscanClusteringWithMatrix(points, matrix, eps, minPts) {
+            updateProgress(80, 'กำลังจัดกลุ่มจุด...');
+            
+            const clusters = [];
+            const visited = new Array(points.length).fill(false);
+            const clusterLabels = new Array(points.length).fill(-1);
+            let clusterId = 0;
+            const pairList = []; // เก็บคู่ที่จับได้
+            const singleList = []; // เก็บจุดเดี่ยว
+            
+            for (let i = 0; i < points.length; i++) {
+                if (visited[i]) continue;
+                
+                visited[i] = true;
+                const neighbors = getNeighborsFromMatrix(matrix, i, eps);
+                
+                if (neighbors.length < minPts) {
+                    // Noise point
+                    clusterLabels[i] = -1;
+                } else {
+                    // Core point
+                    clusterLabels[i] = clusterId;
+                    expandClusterWithMatrix(matrix, i, neighbors, clusterLabels, visited, clusterId, eps, minPts);
+                    clusterId++;
+                }
+            }
+            
+            // จัดกลุ่มตาม clusterLabels
+            for (let i = 0; i < clusterId; i++) {
+                const cluster = [];
+                for (let j = 0; j < points.length; j++) {
+                    if (clusterLabels[j] === i) {
+                        cluster.push(points[j]);
+                    }
+                }
+                if (cluster.length > 0) {
+                    clusters.push(cluster);
+                }
+            }
+            
+            // จุดที่ไม่ได้อยู่ในกลุ่มใด
+            const noisePoints = [];
+            for (let i = 0; i < points.length; i++) {
+                if (clusterLabels[i] === -1) {
+                    noisePoints.push(points[i]);
+                }
+            }
+            
+            // สร้างคู่จากกลุ่มที่มี 2 จุด
+            clusters.forEach(cluster => {
+                if (cluster.length === 2) {
+                    const point1Index = pointsData.findIndex(p => p.name === cluster[0].name);
+                    const point2Index = pointsData.findIndex(p => p.name === cluster[1].name);
+                    
+                    if (point1Index !== -1 && point2Index !== -1) {
+                        pairList.push({
+                            point1: cluster[0],
+                            point2: cluster[1],
+                            distance: matrix[point1Index][point2Index]
+                        });
+                    }
+                } else if (cluster.length > 2) {
+                    // สำหรับกลุ่มที่มีมากกว่า 2 จุด สร้างคู่ทั้งหมด
+                    for (let i = 0; i < cluster.length; i++) {
+                        for (let j = i + 1; j < cluster.length; j++) {
+                            const point1Index = pointsData.findIndex(p => p.name === cluster[i].name);
+                            const point2Index = pointsData.findIndex(p => p.name === cluster[j].name);
+                            
+                            if (point1Index !== -1 && point2Index !== -1) {
+                                pairList.push({
+                                    point1: cluster[i],
+                                    point2: cluster[j],
+                                    distance: matrix[point1Index][point2Index]
+                                });
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // จัดการจุดเดี่ยว
+            noisePoints.forEach(point => {
+                const pointIndex = pointsData.findIndex(p => p.name === point.name);
+                
+                // หาจุดใกล้เคียงสุดนอกเงื่อนไข
+                let nearestPoint = null;
+                let nearestDistance = Infinity;
+                
+                for (let j = 0; j < pointsData.length; j++) {
+                    if (pointIndex === j) continue;
+                    
+                    const distance = matrix[pointIndex][j];
+                    
+                    if (distance < nearestDistance) {
+                        nearestDistance = distance;
+                        nearestPoint = pointsData[j];
+                    }
+                }
+                
+                // เพิ่มเข้าไปในรายการจุดเดี่ยว
+                singleList.push({
+                    point: point,
+                    nearestPoint: nearestPoint,
+                    distance: nearestDistance
+                });
+            });
+            
+            pairData = pairList;
+            singlePointsData = singleList;
+            return clusters;
+        }
+        
+        function getNeighborsFromMatrix(matrix, pointIdx, eps) {
+            const neighbors = [];
+            for (let i = 0; i < matrix.length; i++) {
+                if (i === pointIdx) continue;
+                if (matrix[pointIdx][i] <= eps) {
+                    neighbors.push(i);
+                }
+            }
+            return neighbors;
+        }
+        
+        function expandClusterWithMatrix(matrix, pointIdx, neighbors, clusterLabels, visited, clusterId, eps, minPts) {
+            let i = 0;
+            while (i < neighbors.length) {
+                const neighborIdx = neighbors[i];
+                if (!visited[neighborIdx]) {
+                    visited[neighborIdx] = true;
+                    const neighborNeighbors = getNeighborsFromMatrix(matrix, neighborIdx, eps);
+                    if (neighborNeighbors.length >= minPts) {
+                        neighbors = neighbors.concat(neighborNeighbors.filter(idx => !neighbors.includes(idx)));
+                    }
+                }
+                if (clusterLabels[neighborIdx] === -1) {
+                    clusterLabels[neighborIdx] = clusterId;
+                }
+                i++;
+            }
+        }
+        
+        // ฟังก์ชันประมวลผลการจัดกลุ่ม
+        async function processClustering() {
+            if (pointsData.length === 0) {
+                showError('ไม่มีข้อมูลให้ประมวลผล');
+                return;
+            }
+            
+            showLoading(true);
+            
+            try {
+                const threshold = parseFloat(distanceThreshold.value) || 5;
+                const algorithm = document.getElementById('algorithm').value;
+                
+                // สร้าง Distance Matrix ด้วย OSRM
+                distanceMatrix = await buildDistanceMatrix(pointsData);
+                
+                let clusters;
+                if (algorithm === 'dbscan') {
+                    clusters = dbscanClusteringWithMatrix(pointsData, distanceMatrix, threshold, 2);
+                } else {
+                    clusters = simpleClusteringWithMatrix(pointsData, distanceMatrix, threshold);
+                }
+                
+                updateProgress(100, 'เสร็จสิ้น!');
+                
+                clusteredData = clusters;
+                displayResults(clusters);
+                showLoading(false);
+                resultsSection.style.display = 'block';
+            } catch (error) {
+                showLoading(false);
+                showError('เกิดข้อผิดพลาดในการประมวลผล: ' + error.message);
+            }
+        }
+        
+        // ฟังก์ชันแสดงผลลัพธ์
+        function displayResults(clusters) {
+            clustersContainer.innerHTML = '';
+            pairsContainer.innerHTML = '';
+            singlePointsContainer.innerHTML = '';
+            
+            // คำนวณสถิติ
+            let totalPoints = pointsData.length;
+            let totalDistance = 0;
+            let distanceCount = 0;
+            let validPairCount = 0;
+            
+            // แสดงคู่พิกัดที่จับได้
+            pairData.forEach(pair => {
+                if (pair.point2 !== null && pair.distance !== null) {
+                    validPairCount++;
+                    
+                    const pairItem = document.createElement('div');
+                    pairItem.className = 'pair-item';
+                    
+                    const pairHeader = document.createElement('div');
+                    pairHeader.className = 'pair-header';
+                    
+                    const pairName = document.createElement('div');
+                    pairName.className = 'pair-name';
+                    pairName.innerHTML = `<i class="fas fa-link me-2"></i>คู่ที่ ${validPairCount}`;
+                    
+                    const pairDistance = document.createElement('div');
+                    pairDistance.className = 'pair-distance';
+                    pairDistance.textContent = `${pair.distance.toFixed(2)} กม.`;
+                    
+                    pairHeader.appendChild(pairName);
+                    pairHeader.appendChild(pairDistance);
+                    
+                    const pairDetails = document.createElement('div');
+                    pairDetails.className = 'pair-details';
+                    
+                    // จุดที่ 1
+                    const point1Div = document.createElement('div');
+                    point1Div.className = 'pair-point';
+                    
+                    const point1Name = document.createElement('div');
+                    point1Name.className = 'point-name';
+                    point1Name.textContent = pair.point1.name;
+                    
+                    const point1Coords = document.createElement('div');
+                    point1Coords.className = 'point-coords';
+                    point1Coords.textContent = `${pair.point1.lat.toFixed(6)}, ${pair.point1.lng.toFixed(6)}`;
+                    
+                    point1Div.appendChild(point1Name);
+                    point1Div.appendChild(point1Coords);
+                    
+                    // จุดที่ 2
+                    const point2Div = document.createElement('div');
+                    point2Div.className = 'pair-point';
+                    
+                    const point2Name = document.createElement('div');
+                    point2Name.className = 'point-name';
+                    point2Name.textContent = pair.point2.name;
+                    
+                    const point2Coords = document.createElement('div');
+                    point2Coords.className = 'point-coords';
+                    point2Coords.textContent = `${pair.point2.lat.toFixed(6)}, ${pair.point2.lng.toFixed(6)}`;
+                    
+                    point2Div.appendChild(point2Name);
+                    point2Div.appendChild(point2Coords);
+                    
+                    pairDetails.appendChild(point1Div);
+                    pairDetails.appendChild(point2Div);
+                    
+                    pairItem.appendChild(pairHeader);
+                    pairItem.appendChild(pairDetails);
+                    pairsContainer.appendChild(pairItem);
+                    
+                    totalDistance += pair.distance;
+                    distanceCount++;
+                }
+            });
+            
+            document.getElementById('pairsCount').textContent = `${validPairCount} คู่`;
+            
+            // แสดงจุดที่ไม่มีคู่
+            singlePointsData.forEach((single, index) => {
+                const singleItem = document.createElement('div');
+                singleItem.className = 'single-point-item';
+                
+                const singleHeader = document.createElement('div');
+                singleHeader.className = 'single-point-header';
+                
+                const singleName = document.createElement('div');
+                singleName.className = 'single-point-name';
+                singleName.innerHTML = `<i class="fas fa-user me-2"></i>จุดที่ ${index + 1}`;
+                
+                singleHeader.appendChild(singleName);
+                
+                const singleDetails = document.createElement('div');
+                singleDetails.className = 'single-point-details';
+                
+                // จุดหลัก
+                const mainPointDiv = document.createElement('div');
+                mainPointDiv.className = 'single-point-main';
+                
+                const mainPointName = document.createElement('div');
+                mainPointName.className = 'point-name';
+                mainPointName.textContent = single.point.name;
+                
+                const mainPointCoords = document.createElement('div');
+                mainPointCoords.className = 'point-coords';
+                mainPointCoords.textContent = `${single.point.lat.toFixed(6)}, ${single.point.lng.toFixed(6)}`;
+                
+                mainPointDiv.appendChild(mainPointName);
+                mainPointDiv.appendChild(mainPointCoords);
+                
+                // จุดใกล้เคียงสุด
+                const nearestPointDiv = document.createElement('div');
+                nearestPointDiv.className = 'single-point-nearest';
+                
+                const nearestPointLabel = document.createElement('div');
+                nearestPointLabel.className = 'nearest-point-label';
+                nearestPointLabel.textContent = 'จุดใกล้เคียงสุด:';
+                
+                if (single.nearestPoint) {
+                    const nearestPointName = document.createElement('div');
+                    nearestPointName.className = 'point-name';
+                    nearestPointName.textContent = single.nearestPoint.name;
+                    
+                    const nearestPointCoords = document.createElement('div');
+                    nearestPointCoords.className = 'nearest-point-coords';
+                    nearestPointCoords.textContent = `${single.nearestPoint.lat.toFixed(6)}, ${single.nearestPoint.lng.toFixed(6)}`;
+                    
+                    const nearestPointDistance = document.createElement('div');
+                    nearestPointDistance.className = 'nearest-point-distance';
+                    nearestPointDistance.textContent = `ระยะทาง: ${single.distance.toFixed(2)} กม.`;
+                    
+                    nearestPointDiv.appendChild(nearestPointLabel);
+                    nearestPointDiv.appendChild(nearestPointName);
+                    nearestPointDiv.appendChild(nearestPointCoords);
+                    nearestPointDiv.appendChild(nearestPointDistance);
+                } else {
+                    const noNearest = document.createElement('div');
+                    noNearest.className = 'point-name';
+                    noNearest.textContent = 'ไม่มีจุดใกล้เคียง';
+                    nearestPointDiv.appendChild(nearestPointLabel);
+                    nearestPointDiv.appendChild(noNearest);
+                }
+                
+                singleDetails.appendChild(mainPointDiv);
+                singleDetails.appendChild(nearestPointDiv);
+                
+                singleItem.appendChild(singleHeader);
+                singleItem.appendChild(singleDetails);
+                singlePointsContainer.appendChild(singleItem);
+            });
+            
+            document.getElementById('singlePointsCount').textContent = `${singlePointsData.length} จุด`;
+            
+            // แสดงกลุ่ม
+            clusters.forEach((cluster, index) => {
+                const clusterCard = document.createElement('div');
+                clusterCard.className = 'cluster-card';
+                
+                const clusterHeader = document.createElement('div');
+                clusterHeader.className = 'cluster-header';
+                
+                const clusterTitle = document.createElement('div');
+                clusterTitle.className = 'cluster-title';
+                clusterTitle.innerHTML = `<i class="fas fa-layer-group me-2"></i>กลุ่ม ${index + 1}`;
+                
+                const clusterCount = document.createElement('div');
+                clusterCount.className = 'cluster-count';
+                clusterCount.textContent = cluster.length;
+                
+                clusterHeader.appendChild(clusterTitle);
+                clusterHeader.appendChild(clusterCount);
+                
+                const clusterItems = document.createElement('div');
+                clusterItems.className = 'cluster-items';
+                
+                cluster.forEach(point => {
+                    const item = document.createElement('div');
+                    item.className = 'cluster-item';
+                    
+                    const itemName = document.createElement('div');
+                    itemName.className = 'item-name';
+                    itemName.innerHTML = `<i class="fas fa-map-pin me-2"></i>${point.name}`;
+                    
+                    const itemCoords = document.createElement('div');
+                    itemCoords.className = 'item-coords';
+                    itemCoords.textContent = `${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}`;
+                    
+                    item.appendChild(itemName);
+                    item.appendChild(itemCoords);
+                    clusterItems.appendChild(item);
+                });
+                
+                clusterCard.appendChild(clusterHeader);
+                clusterCard.appendChild(clusterItems);
+                clustersContainer.appendChild(clusterCard);
+                
+                // คำนวณระยะเฉลี่ยภายในกลุ่ม (สำหรับกลุ่มที่มีมากกว่า 1 จุด)
+                if (cluster.length > 1) {
+                    for (let i = 0; i < cluster.length; i++) {
+                        for (let j = 0; j < cluster.length; j++) {
+                            if (i !== j) {
+                                const point1Index = pointsData.findIndex(p => p.name === cluster[i].name);
+                                const point2Index = pointsData.findIndex(p => p.name === cluster[j].name);
+                                
+                                if (point1Index !== -1 && point2Index !== -1) {
+                                    const distance = distanceMatrix[point1Index][point2Index];
+                                    totalDistance += distance;
+                                    distanceCount++;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // อัปเดตสถิติ
+            document.getElementById('totalPoints').textContent = totalPoints;
+            document.getElementById('clusterCount').textContent = clusters.length;
+            const avgDistance = distanceCount > 0 ? (totalDistance / distanceCount) : 0;
+            document.getElementById('avgDistance').textContent = avgDistance.toFixed(2);
+            document.getElementById('pairCount').textContent = validPairCount;
+        }
+        
+        // ฟังก์ชันแสดง/ซ่อน loading
+        function showLoading(show) {
+            loading.style.display = show ? 'block' : 'none';
+            if (show) {
+                updateProgress(0, 'กำลังเตรียมข้อมูล...');
+            }
+        }
+        
+        // ฟังก์ชันแสดงข้อผิดพลาด
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = message ? 'block' : 'none';
+        }
+        
+        // ฟังก์ชันดาวน์โหลด CSV
+        function downloadCSV() {
+            if (clusteredData.length === 0) return;
+            
+            // สร้าง CSV สำหรับข้อมูลกลุ่ม
+            let csvContent = '"กลุ่ม","ชื่อ","ละติจูด","ลองจิจูด"\n';
+            
+            clusteredData.forEach((cluster, clusterIndex) => {
+                cluster.forEach(point => {
+                    csvContent += `"${clusterIndex + 1}","${point.name.replace(/"/g, '""')}","${point.lat}","${point.lng}"\n`;
+                });
+            });
+            
+            // เพิ่ม section สำหรับคู่ที่จับได้
+            csvContent += '\n"คู่ที่จับได้ (ตรงเงื่อนไข)",,,,,,,\n';
+            csvContent += '"ลำดับ","ชื่อ 1","ละติจูด 1","ลองจิจูด 1","ชื่อ 2","ละติจูด 2","ลองจิจูด 2","ระยะทาง (กม.)"\n';
+            
+            pairData.forEach((pair, index) => {
+                if (pair.point2 !== null && pair.distance !== null) {
+                    csvContent += `"${index + 1}","${pair.point1.name.replace(/"/g, '""')}","${pair.point1.lat}","${pair.point1.lng}","${pair.point2.name.replace(/"/g, '""')}","${pair.point2.lat}","${pair.point2.lng}","${pair.distance.toFixed(2)}"\n`;
+                }
+            });
+            
+            // เพิ่ม section สำหรับจุดเดี่ยว
+            csvContent += '\n"จุดที่ไม่มีคู่ (ไม่ตรงเงื่อนไข)",,,,,,,\n';
+            csvContent += '"ลำดับ","ชื่อ","ละติจูด","ลองจิจูด","จุดใกล้เคียงสุด","ละติจูด ใกล้เคียง","ลองจิจูด ใกล้เคียง","ระยะทาง (กม.)"\n';
+            
+            singlePointsData.forEach((single, index) => {
+                const nearestName = single.nearestPoint ? single.nearestPoint.name.replace(/"/g, '""') : '';
+                const nearestLat = single.nearestPoint ? single.nearestPoint.lat : '';
+                const nearestLng = single.nearestPoint ? single.nearestPoint.lng : '';
+                const nearestDistance = single.distance ? single.distance.toFixed(2) : '';
+                csvContent += `"${index + 1}","${single.point.name.replace(/"/g, '""')}","${single.point.lat}","${single.point.lng}","${nearestName}","${nearestLat}","${nearestLng}","${nearestDistance}"\n`;
+            });
+            
+            // เพิ่ม section สำหรับยอดรวม
+            csvContent += '\n"ยอดรวม",,,,\n';
+            csvContent += '"จำนวนจุดทั้งหมด","จำนวนกลุ่ม","จำนวนคู่ที่จับได้","ระยะเฉลี่ย (กม.)"\n';
+            csvContent += `"${pointsData.length}","${clusteredData.length}","${document.getElementById('pairCount').textContent}","${document.getElementById('avgDistance').textContent}"\n`;
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'ผลการจัดกลุ่มพิกัด.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // ฟังก์ชันดาวน์โหลด Excel
+        function downloadExcel() {
+            if (clusteredData.length === 0) return;
+            
+            // สร้าง workbook
+            const wb = XLSX.utils.book_new();
+            
+            // สร้าง worksheet สำหรับข้อมูลกลุ่ม
+            const clusterData = [
+                ['กลุ่ม', 'ชื่อ', 'ละติจูด', 'ลองจิจูด']
+            ];
+            
+            clusteredData.forEach((cluster, clusterIndex) => {
+                cluster.forEach(point => {
+                    clusterData.push([
+                        clusterIndex + 1,
+                        point.name,
+                        point.lat,
+                        point.lng
+                    ]);
+                });
+            });
+            
+            const ws1 = XLSX.utils.aoa_to_sheet(clusterData);
+            XLSX.utils.book_append_sheet(wb, ws1, 'กลุ่มพิกัด');
+            
+            // สร้าง worksheet สำหรับคู่ที่จับได้
+            const pairDataSheet = [
+                ['ลำดับ', 'ชื่อ 1', 'ละติจูด 1', 'ลองจิจูด 1', 'ชื่อ 2', 'ละติจูด 2', 'ลองจิจูด 2', 'ระยะทาง (กม.)']
+            ];
+            
+            pairData.forEach((pair, index) => {
+                if (pair.point2 !== null && pair.distance !== null) {
+                    pairDataSheet.push([
+                        index + 1,
+                        pair.point1.name,
+                        pair.point1.lat,
+                        pair.point1.lng,
+                        pair.point2.name,
+                        pair.point2.lat,
+                        pair.point2.lng,
+                        parseFloat(pair.distance.toFixed(2))
+                    ]);
+                }
+            });
+            
+            const ws2 = XLSX.utils.aoa_to_sheet(pairDataSheet);
+            XLSX.utils.book_append_sheet(wb, ws2, 'คู่ที่จับได้');
+            
+            // สร้าง worksheet สำหรับจุดเดี่ยว
+            const singleDataSheet = [
+                ['ลำดับ', 'ชื่อ', 'ละติจูด', 'ลองจิจูด', 'จุดใกล้เคียงสุด', 'ละติจูด ใกล้เคียง', 'ลองจิจูด ใกล้เคียง', 'ระยะทาง (กม.)']
+            ];
+            
+            singlePointsData.forEach((single, index) => {
+                singleDataSheet.push([
+                    index + 1,
+                    single.point.name,
+                    single.point.lat,
+                    single.point.lng,
+                    single.nearestPoint ? single.nearestPoint.name : '',
+                    single.nearestPoint ? single.nearestPoint.lat : '',
+                    single.nearestPoint ? single.nearestPoint.lng : '',
+                    single.distance ? parseFloat(single.distance.toFixed(2)) : ''
+                ]);
+            });
+            
+            const ws3 = XLSX.utils.aoa_to_sheet(singleDataSheet);
+            XLSX.utils.book_append_sheet(wb, ws3, 'จุดที่ไม่มีคู่');
+            
+            // สร้าง worksheet สำหรับยอดรวม
+            const summaryData = [
+                ['จำนวนจุดทั้งหมด', 'จำนวนกลุ่ม', 'จำนวนคู่ที่จับได้', 'ระยะเฉลี่ย (กม.)'],
+                [
+                    pointsData.length,
+                    clusteredData.length,
+                    parseInt(document.getElementById('pairCount').textContent),
+                    parseFloat(document.getElementById('avgDistance').textContent)
+                ]
+            ];
+            
+            const ws4 = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, ws4, 'ยอดรวม');
+            
+            // ดาวน์โหลดไฟล์
+            XLSX.writeFile(wb, 'ผลการจัดกลุ่มพิกัด.xlsx');
+        }
+    </script>
+</body>
+</html>
