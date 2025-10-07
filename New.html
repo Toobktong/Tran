@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการตารางทำงาน</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Prompt', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+            padding: 20px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 30px;
+            margin-bottom: 25px;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .employee-section {
+            margin-bottom: 30px;
+        }
+        
+        .employee-input-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        
+        .employee-input {
+            padding: 12px 15px;
+            font-size: 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            width: 250px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .employee-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .add-employee-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .add-employee-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .employee-list {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .employee-item {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 15px;
+            margin: 5px;
+            border-radius: 20px;
+            font-size: 14px;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .remove-employee {
+            margin-left: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            opacity: 0.8;
+            transition: opacity 0.2s ease;
+        }
+        
+        .remove-employee:hover {
+            opacity: 1;
+        }
+        
+        .date-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .date-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .date-input-group label {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .date-input {
+            padding: 12px 15px;
+            font-size: 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .date-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+        }
+        
+        .weekend-option {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .weekend-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .weekend-option label {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .saturday-options {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .saturday-select {
+            padding: 10px 15px;
+            font-size: 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .saturday-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .file-upload {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            margin: 30px 0;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .file-upload:hover {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-color: #764ba2;
+            transform: scale(1.02);
+        }
+        
+        .file-upload i {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .file-upload h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .file-upload p {
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .report-btn {
+            display: block;
+            margin: 30px auto;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e1e5e9;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        tr:hover {
+            background-color: #e3f2fd;
+        }
+        
+        .day-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            text-align: center;
+            font-weight: 600;
+            font-size: 18px;
+        }
+        
+        .warning {
+            color: #dc3545;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background-color: #f8d7da;
+        }
+        
+        .success {
+            color: #28a745;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background-color: #d4edda;
+        }
+        
+        .info {
+            color: #17a2b8;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background-color: #d1ecf1;
+        }
+        
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .success-msg {
+            color: #28a745;
+            background-color: #d4edda;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .sample-table {
+            margin: 25px 0;
+            font-size: 16px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .sample-table th {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        
+        .sample-table td {
+            text-align: center;
+        }
+        
+        .employee-name-display {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin: 20px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 10px;
+        }
+        
+        .date-display {
+            text-align: center;
+            font-size: 20px;
+            color: #333;
+            margin: 20px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+        }
+        
+        .calculation-result {
+            background: linear-gradient(135deg, #d6eaf8 0%, #aed6f1 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: 500;
+            font-size: 18px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stats-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            flex: 1;
+            min-width: 200px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .date-section {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .employee-input-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .employee-input {
+                width: 100%;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-calendar-alt"></i> ระบบจัดการตารางทำงาน</h1>
+            <p>จัดการตารางงานพนักงานอย่างมีประสิทธิภาพ</p>
+        </div>
+        
+        <div class="card">
+            <h2 class="card-title"><i class="fas fa-users"></i> จัดการพนักงาน</h2>
+            
+            <div class="employee-section">
+                <div class="employee-input-container">
+                    <input type="text" id="employeeName" class="employee-input" placeholder="กรอกชื่อพนักงาน">
+                    <button class="add-employee-btn" onclick="addEmployee()">
+                        <i class="fas fa-plus"></i> เพิ่มพนักงาน
+                    </button>
+                </div>
+                <div id="employeeList" class="employee-list">
+                    <!-- รายการพนักงานจะแสดงที่นี่ -->
+                </div>
+            </div>
+            
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-number" id="employeeCount">0</div>
+                    <div class="stat-label">จำนวนพนักงาน</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="workDaysCount">0</div>
+                    <div class="stat-label">วันทำงาน/เดือน</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="assignmentsPerEmployee">0</div>
+                    <div class="stat-label">งาน/พนักงาน</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2 class="card-title"><i class="fas fa-cog"></i> ตั้งค่าตารางงาน</h2>
+            
+            <div class="date-section">
+                <div class="date-input-group">
+                    <label for="workMonth"><i class="fas fa-calendar"></i> เดือน:</label>
+                    <select id="workMonth" class="date-input">
+                        <option value="1">มกราคม</option>
+                        <option value="2">กุมภาพันธ์</option>
+                        <option value="3">มีนาคม</option>
+                        <option value="4">เมษายน</option>
+                        <option value="5">พฤษภาคม</option>
+                        <option value="6">มิถุนายน</option>
+                        <option value="7">กรกฎาคม</option>
+                        <option value="8">สิงหาคม</option>
+                        <option value="9">กันยายน</option>
+                        <option value="10">ตุลาคม</option>
+                        <option value="11">พฤศจิกายน</option>
+                        <option value="12">ธันวาคม</option>
+                    </select>
+                </div>
+                
+                <div class="date-input-group">
+                    <label for="workYear"><i class="fas fa-calendar-alt"></i> ปี:</label>
+                    <input type="number" id="workYear" class="date-input" min="2020" max="2030" value="2023">
+                </div>
+                
+                <button class="btn btn-success" onclick="setWorkPeriod()">
+                    <i class="fas fa-check"></i> ตั้งค่า
+                </button>
+            </div>
+            
+            <div class="weekend-option">
+                <input type="checkbox" id="includeSaturday" class="weekend-checkbox" onchange="toggleSaturdayOptions()">
+                <label for="includeSaturday"><i class="fas fa-calendar-day"></i> รวมวันเสาร์ในการทำงาน</label>
+            </div>
+            
+            <div id="saturdayOptions" class="saturday-options hidden">
+                <label for="saturdayWeek1"><i class="fas fa-list-ol"></i> ทำงานวันเสาร์ในสัปดาห์ที่:</label>
+                <select id="saturdayWeek1" class="saturday-select">
+                    <option value="1">สัปดาห์ที่ 1</option>
+                    <option value="2">สัปดาห์ที่ 2</option>
+                    <option value="3">สัปดาห์ที่ 3</option>
+                    <option value="4">สัปดาห์ที่ 4</option>
+                    <option value="5">สัปดาห์ที่ 5</option>
+                </select>
+                <span>และ</span>
+                <select id="saturdayWeek2" class="saturday-select">
+                    <option value="">ไม่เลือก</option>
+                    <option value="1">สัปดาห์ที่ 1</option>
+                    <option value="2">สัปดาห์ที่ 2</option>
+                    <option value="3">สัปดาห์ที่ 3</option>
+                    <option value="4">สัปดาห์ที่ 4</option>
+                    <option value="5">สัปดาห์ที่ 5</option>
+                </select>
+            </div>
+            
+            <div id="employeeDisplay" class="employee-name-display hidden"></div>
+            <div id="dateDisplay" class="date-display hidden"></div>
+            <div id="calculationResult" class="calculation-result hidden"></div>
+        </div>
+        
+        <div class="card">
+            <h2 class="card-title"><i class="fas fa-file-excel"></i> อัพโหลดไฟล์ Excel</h2>
+            <p style="text-align: center; margin-bottom: 20px;">ไฟล์ต้องมีคอลัมน์ดังนี้:</p>
+            
+            <table class="sample-table">
+                <thead>
+                    <tr>
+                        <th>ชื่อ 1</th>
+                        <th>ละติจูด 1</th>
+                        <th>ลองจิจูด 1</th>
+                        <th>ชื่อ 2</th>
+                        <th>ละติจูด 2</th>
+                        <th>ลองจิจูด 2</th>
+                        <th>ระยะทาง (กม.)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>สำนักงานใหญ่</td>
+                        <td>13.7563</td>
+                        <td>100.5018</td>
+                        <td>สาขาเชียงใหม่</td>
+                        <td>18.7883</td>
+                        <td>98.9853</td>
+                        <td>650.5</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h3>อัพโหลดไฟล์ Excel</h3>
+                <p>คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาที่นี่</p>
+                <p style="font-size: 14px;">(รองรับไฟล์ .xlsx, .xls)</p>
+            </div>
+            <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls" onchange="handleFileSelect(event)">
+            
+            <div id="fileInfo" class="hidden">
+                <p><i class="fas fa-file"></i> ไฟล์ที่เลือก: <span id="fileName"></span></p>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn btn-success" onclick="processFile()">
+                        <i class="fas fa-cogs"></i> ประมวลผลไฟล์
+                    </button>
+                    <button class="btn btn-warning" onclick="clearFile()">
+                        <i class="fas fa-trash"></i> ล้างไฟล์
+                    </button>
+                </div>
+            </div>
+            
+            <div id="messageArea"></div>
+        </div>
+
+        <table id="workTable" class="hidden">
+            <thead>
+                <tr>
+                    <th>วันที่</th>
+                    <th>วันทำงาน</th>
+                    <th>สถานที่ทำงาน 1</th>
+                    <th>พิกัด 1</th>
+                    <th>สถานที่ทำงาน 2</th>
+                    <th>พิกัด 2</th>
+                    <th>ระยะทาง (กม.)</th>
+                    <th>ชื่อพนักงาน</th>
+                    <th>สถานะ</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Data will be inserted here -->
+            </tbody>
+        </table>
+
+        <button class="btn report-btn hidden" id="exportBtn" onclick="exportToExcel()">
+            <i class="fas fa-download"></i> ดาวน์โหลดรายงาน Excel
+        </button>
+    </div>
+
+    <script>
+        let workData = [];
+        let uploadedFile = null;
+        let employeeNames = [];
+        let workMonth = new Date().getMonth() + 1;
+        let workYear = new Date().getFullYear();
+        let includeSaturday = false;
+        let saturdayWeek1 = '1';
+        let saturdayWeek2 = '';
+
+        // ฟังก์ชัน toggle ตัวเลือกวันเสาร์
+        function toggleSaturdayOptions() {
+            includeSaturday = document.getElementById('includeSaturday').checked;
+            const saturdayOptions = document.getElementById('saturdayOptions');
+            if (includeSaturday) {
+                saturdayOptions.classList.remove('hidden');
+            } else {
+                saturdayOptions.classList.add('hidden');
+            }
+            calculateWorkDistribution();
+        }
+
+        // ฟังก์ชันเพิ่มพนักงาน
+        function addEmployee() {
+            const nameInput = document.getElementById('employeeName');
+            const name = nameInput.value.trim();
+            
+            if (name === '') {
+                showMessage('กรุณาใส่ชื่อพนักงาน', 'error');
+                return;
+            }
+            
+            if (employeeNames.length >= 20) {
+                showMessage('สามารถใส่ชื่อพนักงานได้สูงสุด 20 คน', 'error');
+                return;
+            }
+            
+            if (employeeNames.includes(name)) {
+                showMessage('ชื่อพนักงานนี้มีอยู่แล้ว', 'error');
+                return;
+            }
+            
+            employeeNames.push(name);
+            nameInput.value = '';
+            renderEmployeeList();
+            updateEmployeeDisplay();
+            calculateWorkDistribution();
+            updateStats();
+            showMessage(`เพิ่มพนักงาน "${name}" เรียบร้อย`, 'success');
+        }
+
+        // ฟังก์ชันลบพนักงาน
+        function removeEmployee(index) {
+            const removedName = employeeNames.splice(index, 1)[0];
+            renderEmployeeList();
+            updateEmployeeDisplay();
+            calculateWorkDistribution();
+            updateStats();
+            showMessage(`ลบพนักงาน "${removedName}" เรียบร้อย`, 'success');
+        }
+
+        // ฟังก์ชันแสดงรายการพนักงาน
+        function renderEmployeeList() {
+            const listContainer = document.getElementById('employeeList');
+            listContainer.innerHTML = '';
+            
+            employeeNames.forEach((name, index) => {
+                const employeeItem = document.createElement('div');
+                employeeItem.className = 'employee-item';
+                employeeItem.innerHTML = `
+                    <i class="fas fa-user"></i> ${name}
+                    <span class="remove-employee" onclick="removeEmployee(${index})"><i class="fas fa-times"></i></span>
+                `;
+                listContainer.appendChild(employeeItem);
+            });
+        }
+
+        // ฟังก์ชันอัพเดตการแสดงผลจำนวนพนักงาน
+        function updateEmployeeDisplay() {
+            if (employeeNames.length > 0) {
+                document.getElementById('employeeDisplay').innerHTML = `<i class="fas fa-users"></i> พนักงานทั้งหมด: ${employeeNames.length} คน`;
+                document.getElementById('employeeDisplay').classList.remove('hidden');
+            } else {
+                document.getElementById('employeeDisplay').classList.add('hidden');
+            }
+        }
+
+        // ฟังก์ชันอัพเดตสถิติ
+        function updateStats() {
+            document.getElementById('employeeCount').textContent = employeeNames.length;
+            
+            if (employeeNames.length > 0) {
+                const workDaysInMonth = getWorkDaysInMonth(workMonth, workYear, includeSaturday, saturdayWeek1, saturdayWeek2);
+                const assignmentsPerEmployee = Math.floor(workDaysInMonth / employeeNames.length);
+                
+                document.getElementById('workDaysCount').textContent = workDaysInMonth;
+                document.getElementById('assignmentsPerEmployee').textContent = assignmentsPerEmployee;
+            }
+        }
+
+        // ฟังก์ชันตั้งค่าเดือน/ปี
+        function setWorkPeriod() {
+            workMonth = parseInt(document.getElementById('workMonth').value);
+            workYear = parseInt(document.getElementById('workYear').value);
+            includeSaturday = document.getElementById('includeSaturday').checked;
+            saturdayWeek1 = document.getElementById('saturdayWeek1').value;
+            saturdayWeek2 = document.getElementById('saturdayWeek2').value;
+            updateDateDisplay();
+            calculateWorkDistribution();
+            updateStats();
+            showMessage(`ตั้งค่าเดือน/ปีเป็น ${getMonthThai(workMonth-1)} ${workYear} เรียบร้อย`, 'success');
+        }
+
+        // ฟังก์ชันอัพเดตการแสดงผลเดือน/ปี
+        function updateDateDisplay() {
+            if (employeeNames.length > 0) {
+                let weekendText = '';
+                if (includeSaturday) {
+                    weekendText = ` (รวมวันเสาร์สัปดาห์ที่ ${saturdayWeek1}`;
+                    if (saturdayWeek2) {
+                        weekendText += ` และ ${saturdayWeek2}`;
+                    }
+                    weekendText += ')';
+                }
+                document.getElementById('dateDisplay').innerHTML = `<i class="fas fa-calendar-alt"></i> เดือน: ${getMonthThai(workMonth-1)} ${workYear}${weekendText}`;
+                document.getElementById('dateDisplay').classList.remove('hidden');
+            }
+        }
+
+        // ฟังก์ชันคำนวณการจัดพนักงาน
+        function calculateWorkDistribution() {
+            if (employeeNames.length === 0) return;
+            
+            const workDaysInMonth = getWorkDaysInMonth(workMonth, workYear, includeSaturday, saturdayWeek1, saturdayWeek2);
+            const totalEmployees = employeeNames.length;
+            const assignmentsPerEmployee = Math.floor(workDaysInMonth / totalEmployees);
+            const remainingDays = workDaysInMonth % totalEmployees;
+            
+            let resultText = `<i class="fas fa-info-circle"></i> จำนวนวันทำงานในเดือน: ${workDaysInMonth} วัน<br>`;
+            resultText += `<i class="fas fa-users"></i> จำนวนพนักงาน: ${totalEmployees} คน<br>`;
+            resultText += `<i class="fas fa-tasks"></i> แต่ละคนทำงาน: ${assignmentsPerEmployee} วัน<br>`;
+            
+            if (remainingDays > 0) {
+                resultText += `<i class="fas fa-exclamation-triangle"></i> เหลือวันทำงาน: ${remainingDays} วัน (ต้องจัดเพิ่ม)<br>`;
+                resultText += `<span class="warning"><i class="fas fa-lightbulb"></i> คำแนะนำ: เพิ่มพนักงานอีก ${20 - totalEmployees} คน หรือลดจำนวนวันทำงาน</span>`;
+            } else if (remainingDays === 0) {
+                resultText += `<span class="success"><i class="fas fa-check-circle"></i> จัดพนักงานได้พอดี!</span>`;
+            }
+            
+            document.getElementById('calculationResult').innerHTML = resultText;
+            document.getElementById('calculationResult').classList.remove('hidden');
+        }
+
+        // ฟังก์ชันจัดการการเลือกไฟล์
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                uploadedFile = file;
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('fileInfo').classList.remove('hidden');
+                showMessage(`ไฟล์ ${file.name} ถูกเลือกเรียบร้อย`, 'success');
+            }
+        }
+
+        // ฟังก์ชันประมวลผลไฟล์
+        function processFile() {
+            if (!uploadedFile) {
+                showMessage('กรุณาเลือกไฟล์ก่อนประมวลผล', 'error');
+                return;
+            }
+            
+            if (employeeNames.length === 0) {
+                showMessage('กรุณาใส่ชื่อพนักงานก่อนประมวลผลไฟล์', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    
+                    // สมมติว่าข้อมูลอยู่ใน sheet แรก
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    // แปลงข้อมูลเป็น JSON
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    if (jsonData.length === 0) {
+                        showMessage('ไม่พบข้อมูลในไฟล์', 'error');
+                        return;
+                    }
+                    
+                    // ตรวจสอบโครงสร้างข้อมูล
+                    const requiredColumns = [
+                        'ชื่อ 1', 'ละติจูด 1', 'ลองจิจูด 1',
+                        'ชื่อ 2', 'ละติจูด 2', 'ลองจิจูด 2', 'ระยะทาง (กม.)'
+                    ];
+                    const headers = Object.keys(jsonData[0]);
+                    
+                    if (!requiredColumns.every(col => headers.includes(col))) {
+                        showMessage('ไฟล์ไม่มีคอลัมน์ที่จำเป็นครบถ้วน', 'error');
+                        return;
+                    }
+                    
+                    // ประมวลผลข้อมูล
+                    workData = [];
+                    
+                    // สร้างวันที่เริ่มต้นของเดือนที่เลือก
+                    let currentDate = new Date(workYear, workMonth - 1, 1);
+                    
+                    // หาวันทำงานแรกของเดือน
+                    while (!isWorkDay(currentDate, includeSaturday, saturdayWeek1, saturdayWeek2)) {
+                        currentDate.setDate(currentDate.getDate() + 1);
+                    }
+                    
+                    // คำนวณจำนวนวันทำงานในเดือน
+                    const workDaysInMonth = getWorkDaysInMonth(workMonth, workYear, includeSaturday, saturdayWeek1, saturdayWeek2);
+                    
+                    // จำกัดจำนวนแถวข้อมูลตามจำนวนวันทำงานในเดือน
+                    const rowsToProcess = Math.min(jsonData.length, workDaysInMonth);
+                    
+                    // จัดพนักงานให้แต่ละคนทำงานเท่ากันในแต่ละวัน
+                    const assignmentsPerDay = employeeNames.length;
+                    const daysNeeded = Math.ceil(rowsToProcess / assignmentsPerDay);
+                    
+                    // สร้างรายการงานตามวัน
+                    let dataIndex = 0;
+                    let dayCounter = 0;
+                    
+                    // สำหรับแต่ละวันทำงาน
+                    while (dataIndex < rowsToProcess && dayCounter < daysNeeded) {
+                        // หาวันทำงานถัดไป
+                        while (currentDate.getMonth() === workMonth - 1 && !isWorkDay(currentDate, includeSaturday, saturdayWeek1, saturdayWeek2)) {
+                            currentDate.setDate(currentDate.getDate() + 1);
+                        }
+                        
+                        // ถ้าเลยเดือนแล้วให้หยุด
+                        if (currentDate.getMonth() !== workMonth - 1) {
+                            break;
+                        }
+                        
+                        const dayIndex = currentDate.getDay();
+                        const dayName = getDayThai(dayIndex);
+                        const formattedDate = formatDateStandard(currentDate);
+                        
+                        // จัดงานให้พนักงานทุกคนในวันนี้
+                        for (let empIndex = 0; empIndex < assignmentsPerDay && dataIndex < rowsToProcess; empIndex++) {
+                            const row = jsonData[dataIndex];
+                            const employeeName = employeeNames[empIndex];
+                            
+                            workData.push({
+                                employee: employeeName,
+                                date: formattedDate,
+                                day: dayName,
+                                location1: row['ชื่อ 1'],
+                                lat1: row['ละติจูด 1'],
+                                lng1: row['ลองจิจูด 1'],
+                                location2: row['ชื่อ 2'],
+                                lat2: row['ละติจูด 2'],
+                                lng2: row['ลองจิจูด 2'],
+                                distance: row['ระยะทาง (กม.)']
+                            });
+                            
+                            dataIndex++;
+                        }
+                        
+                        dayCounter++;
+                        currentDate.setDate(currentDate.getDate() + 1);
+                    }
+                    
+                    // แสดงผลลัพธ์
+                    renderTable();
+                    document.getElementById('workTable').classList.remove('hidden');
+                    document.getElementById('exportBtn').classList.remove('hidden');
+                    showMessage(`ประมวลผลไฟล์เรียบร้อย ${workData.length} รายการ`, 'success');
+                    
+                } catch (error) {
+                    showMessage('เกิดข้อผิดพลาดในการประมวลผลไฟล์: ' + error.message, 'error');
+                }
+            };
+            
+            reader.readAsArrayBuffer(uploadedFile);
+        }
+
+        // ฟังก์ชันตรวจสอบว่าวันที่เป็นวันทำงานหรือไม่
+        function isWorkDay(date, includeSaturday, saturdayWeek1, saturdayWeek2) {
+            const dayOfWeek = date.getDay();
+            // 1=จันทร์, 2=อังคาร, 3=พุธ, 4=พฤหัส, 5=ศุกร์, 6=เสาร์
+            
+            // วันจันทร์-ศุกร์เป็นวันทำงานเสมอ
+            if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                return true;
+            }
+            
+            // ตรวจสอบวันเสาร์
+            if (dayOfWeek === 6 && includeSaturday) {
+                // คำนวณสัปดาห์ที่ของเดือน
+                const weekOfMonth = getWeekOfMonth(date);
+                return (weekOfMonth == saturdayWeek1) || (saturdayWeek2 && weekOfMonth == saturdayWeek2);
+            }
+            
+            return false;
+        }
+
+        // ฟังก์ชันคำนวณสัปดาห์ที่ของเดือน
+        function getWeekOfMonth(date) {
+            const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+            const firstDayOfWeek = firstDayOfMonth.getDay();
+            const offsetDate = date.getDate() + firstDayOfWeek - 1;
+            return Math.floor(offsetDate / 7) + 1;
+        }
+
+        // ฟังก์ชันคำนวณจำนวนวันทำงานในเดือน
+        function getWorkDaysInMonth(month, year, includeSaturday, saturdayWeek1, saturdayWeek2) {
+            let count = 0;
+            const daysInMonth = new Date(year, month, 0).getDate();
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month - 1, day);
+                if (isWorkDay(date, includeSaturday, saturdayWeek1, saturdayWeek2)) {
+                    count++;
+                }
+            }
+            
+            return count;
+        }
+
+        // ฟังก์ชันล้างไฟล์
+        function clearFile() {
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileInfo').classList.add('hidden');
+            uploadedFile = null;
+            workData = [];
+            document.getElementById('workTable').classList.add('hidden');
+            document.getElementById('exportBtn').classList.add('hidden');
+            document.getElementById('tableBody').innerHTML = '';
+            showMessage('ล้างไฟล์เรียบร้อย', 'success');
+        }
+
+        // ฟังก์ชันแสดงข้อมูลในตาราง
+        function renderTable() {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            
+            // จัดกลุ่มข้อมูลตามวัน
+            const groupedByDate = {};
+            workData.forEach(item => {
+                if (!groupedByDate[item.date]) {
+                    groupedByDate[item.date] = [];
+                }
+                groupedByDate[item.date].push(item);
+            });
+            
+            // แสดงข้อมูลตามวัน
+            for (const date in groupedByDate) {
+                const dateData = groupedByDate[date];
+                
+                // เพิ่มแถวหัวข้อวันที่
+                const dateRow = document.createElement('tr');
+                dateRow.innerHTML = `<td colspan="9" class="day-header"><i class="fas fa-calendar-day"></i> วันที่: ${formatDate(date)} (${dateData[0].day})</td>`;
+                tableBody.appendChild(dateRow);
+                
+                // เพิ่มข้อมูลของแต่ละพนักงานในวันนี้
+                dateData.forEach((entry, index) => {
+                    const row = document.createElement('tr');
+                    
+                    // กำหนดสถานะ
+                    let status = '';
+                    if (index === 0) {
+                        status = '<span class="success"><i class="fas fa-map-marker-alt"></i> สถานที่แรก</span>';
+                    } else {
+                        const prevEntry = dateData[index - 1];
+                        if (entry.location1 !== prevEntry.location2) {
+                            status = '<span class="warning"><i class="fas fa-route"></i> ต้องเดินทาง</span>';
+                        } else {
+                            status = '<span class="info"><i class="fas fa-walking"></i> สถานที่ใกล้กัน</span>';
+                        }
+                    }
+                    
+                    row.innerHTML = `
+                        <td>${formatDate(entry.date)}</td>
+                        <td>${entry.day}</td>
+                        <td>${entry.location1}</td>
+                        <td>${entry.lat1}, ${entry.lng1}</td>
+                        <td>${entry.location2}</td>
+                        <td>${entry.lat2}, ${entry.lng2}</td>
+                        <td>${entry.distance}</td>
+                        <td><i class="fas fa-user"></i> ${entry.employee}</td>
+                        <td>${status}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+        }
+
+        // ฟังก์ชันส่งออก Excel แยกเป็น Sheet ของพนักงานแต่ละคน
+        function exportToExcel() {
+            if (workData.length === 0) {
+                showMessage('ไม่มีข้อมูลสำหรับส่งออก', 'error');
+                return;
+            }
+            
+            const wb = XLSX.utils.book_new();
+            
+            // จัดกลุ่มข้อมูลตามพนักงาน
+            const groupedByEmployee = {};
+            workData.forEach(item => {
+                if (!groupedByEmployee[item.employee]) {
+                    groupedByEmployee[item.employee] = [];
+                }
+                groupedByEmployee[item.employee].push(item);
+            });
+            
+            // สร้าง Sheet สำหรับแต่ละพนักงาน
+            for (const employee in groupedByEmployee) {
+                const employeeData = groupedByEmployee[employee];
+                
+                // แปลงข้อมูลเป็นรูปแบบที่ Excel ใช้งานได้
+                const excelData = employeeData.map(item => ({
+                    'วันที่': formatDate(item.date),
+                    'วันทำงาน': item.day,
+                    'สถานที่ทำงาน 1': item.location1,
+                    'ละติจูด 1': item.lat1,
+                    'ลองจิจูด 1': item.lng1,
+                    'สถานที่ทำงาน 2': item.location2,
+                    'ละติจูด 2': item.lat2,
+                    'ลองจิจูด 2': item.lng2,
+                    'ระยะทาง (กม.)': item.distance
+                }));
+                
+                const ws = XLSX.utils.json_to_sheet(excelData);
+                XLSX.utils.book_append_sheet(wb, ws, employee);
+            }
+            
+            let fileName = `ตารางทำงาน_${getMonthThai(workMonth-1)}_${workYear}`;
+            if (includeSaturday) {
+                fileName += `_รวมเสาร์${saturdayWeek1}`;
+                if (saturdayWeek2) {
+                    fileName += `_${saturdayWeek2}`;
+                }
+            }
+            XLSX.writeFile(wb, `${fileName}.xlsx`);
+        }
+
+        // ฟังก์ชันแสดงข้อความ
+        function showMessage(message, type) {
+            const messageArea = document.getElementById('messageArea');
+            messageArea.innerHTML = `<div class="${type}-msg"><i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'check-circle'}"></i> ${message}</div>`;
+            setTimeout(() => {
+                messageArea.innerHTML = '';
+            }, 5000);
+        }
+
+        // ฟังก์ชันช่วยเหลือ
+        function getDayThai(dayIndex) {
+            const days = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+            return days[dayIndex];
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()}`;
+        }
+
+        function formatDateStandard(dateInput) {
+            if (dateInput instanceof Date) {
+                const year = dateInput.getFullYear();
+                const month = String(dateInput.getMonth() + 1).padStart(2, '0');
+                const day = String(dateInput.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+            return dateInput;
+        }
+
+        function getDateThai(dateString) {
+            const date = new Date(dateString);
+            return `${date.getDate()} ${getMonthThai(date.getMonth())} ${date.getFullYear() + 543}`;
+        }
+
+        function getMonthThai(monthIndex) {
+            const months = [
+                'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
+                'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม',
+                'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+            ];
+            return months[monthIndex];
+        }
+
+        // รองรับการลากไฟล์
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileUpload = document.querySelector('.file-upload');
+            
+            fileUpload.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.style.backgroundColor = '#d6eaf8';
+                this.style.borderColor = '#2980b9';
+            });
+            
+            fileUpload.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.style.backgroundColor = '#f8f9fa';
+                this.style.borderColor = '#667eea';
+            });
+            
+            fileUpload.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.style.backgroundColor = '#f8f9fa';
+                this.style.borderColor = '#667eea';
+                
+                if (e.dataTransfer.files.length) {
+                    document.getElementById('fileInput').files = e.dataTransfer.files;
+                    const event = new Event('change');
+                    document.getElementById('fileInput').dispatchEvent(event);
+                }
+            });
+            
+            // ตั้งค่าเริ่มต้น
+            document.getElementById('workMonth').value = workMonth;
+            document.getElementById('workYear').value = workYear;
+            document.getElementById('saturdayWeek1').value = saturdayWeek1;
+            
+            // ตั้งค่าสถิติเริ่มต้น
+            updateStats();
+        });
+    </script>
+</body>
+</html>
